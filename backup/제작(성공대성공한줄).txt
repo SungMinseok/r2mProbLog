@@ -1,0 +1,95 @@
+
+def check_craft():#probtest 5
+    startTime = time.time()
+
+    outputName = f"제작결과_{time.strftime('%y%m%d')}.csv"
+
+    targetList = str(df_target.loc[5,"mArg0"]).split(sep=';')
+
+    for target in targetList :
+        global df
+
+        a = df[df["probability_type"] == 5]
+        a = a[a["result_item_no"] == int(target)]
+        #a = a[a["item_sub_no"] == target] #합성성공:1, 합성실패:0
+        a = a.reset_index(drop=True)
+        #print(a)
+
+        a["mName"]=""
+        a["mTime"]=""
+        a["mCraftType"]=""
+        #a["mSuccessCount"]=""
+        #a["mSuccessRate"]=""
+        #a["mGreatSuccessCount"]=""
+        #a["mGreatSuccessRate"]=""
+
+        greatSuccessCountIndex = -1
+        successCountIndex = -1
+        greatSuccessCount = 0
+        successCount = 0
+        for i in range(len(a)):
+
+            before = a.loc[i,"result_item_no"]
+
+            after = df_item.loc[before,"mName"]
+            a.loc[i,"mName"] = after
+
+            a = a.sort_values(by=["item_no"])   
+
+            mCraftType = a.loc[i,"item_sub_no"]
+
+            # if a.loc[i,"item_sub_no"] == 2 :
+            #     greatSuccessCountIndex = i
+            # elif a.loc[i,"item_sub_no"] == 1 :
+            #     successCountIndex = i
+
+
+            # if greatSuccessCountIndex != -1 :
+            #     greatSuccessCount = int(a.loc[greatSuccessCountIndex,"test_result_count"])
+            # if successCountIndex != -1 :
+            #     successCount = int(a.loc[successCountIndex,"test_result_count"]) + greatSuccessCount
+            
+        a.loc[successCountIndex,"mSuccessCount"] = successCount
+        a.loc[successCountIndex,"mGreatSuccessCount"] = greatSuccessCount
+
+        a = a.loc[[successCountIndex]]
+        #print(a)
+
+
+        #시간표기용
+        a.loc[successCountIndex,"mTime"]= time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
+            
+        b=a[["mTime","mName","mSuccessCount","mSuccessRate","mGreatSuccessCount","mGreatSuccessRate"]]
+        b = b.reset_index(drop=True)
+
+        #전체 확률 표기
+        #b["mProb"]=""
+        for i in range(len(b)):
+            tempProb0 = float(b.loc[i,"mSuccessCount"])*0.001
+            tempProb1 = float(b.loc[i,"mGreatSuccessCount"])*0.001
+            b.loc[i,"mSuccessRate"] = f"{tempProb0:.4f}"
+            b.loc[i,"mGreatSuccessRate"] = f"{tempProb1:.4f}"
+
+            
+        b.rename(columns={
+            'mTime':'수행시각'
+        #,'item_no':'합성등급'
+        ,'mName':'아이템명'
+        ,'mSuccessCount':'제작성공횟수'
+        ,'mSuccessRate':'제작성공확률(%)'
+        ,'mGreatSuccessCount':'제작대성공횟수'
+        ,'mGreatSuccessRate':'제작대성공확률(%)'
+        ,'mExpectedProb0':'기대확률(%)'
+        ,'mProbDiff0':'오차(%)'
+        }, inplace = True)
+
+        if not os.path.exists(outputName):
+            b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
+        else:
+            b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
+        
+
+        del a,b
+        gc.collect()
+
+    print(f'check_craft() total-run-time : {time.time()-startTime:.4f} sec')

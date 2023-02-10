@@ -1,0 +1,5 @@
+1.R2M_KR_확률검증대상에 ID 입력 (ID는 R2M_개발커맨드.xlsx 문서>확률명령어시트>참조시트를 참조)
+2.probCheck.py or probCheck.exe 실행
+3.프로바빌리티테스트히스토리 문서명 입력 (ex.R2MProbabilityTestHistory_20221219_20230120)
+4.결과 문서 생성됨
+5.ㅇㅋ?
