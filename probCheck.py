@@ -3,6 +3,7 @@ import time
 import os
 import gc
 import re
+from tqdm import tqdm
 
 #fileName = input("확률테스트결과문서명 입력(.csv 제외) : ")
 #global df, df_target
@@ -61,9 +62,9 @@ def getCsvFile(fileName):
     print(f"success, get csv file : {fileName}")
 
 
-getCsvFile(f"./data/itemList_221219.csv")
-getCsvFile(f"./data/transformList_221219.csv")
-getCsvFile(f"./data/servantList_221219.csv")
+getCsvFile(f"./data/item.csv")
+getCsvFile(f"./data/transform.csv")
+getCsvFile(f"./data/servant.csv")
 getCsvFile(f"./data/skillList.csv")
 getCsvFile(f"./data/engraveAbilityType.csv")
 getCsvFile(f"./data/engraveSlainType.csv")
@@ -75,7 +76,7 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
     df_after = df_after.reset_index(drop=True)
 
     if probID == 1:
-        print(f"probTest {probID} compare_prob")
+        #print(f"probTest {probID} compare_prob")
         
         df_curProb = df_prob[(df_prob.index==probID)]
         df_curProb = df_curProb.reset_index(drop=True)
@@ -349,9 +350,18 @@ def check_gacha():#probtest 1
     if not targetList[0].isnumeric() :
         print("target is null... activate all test...")
         
-        curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"DrawGroupNo":', '')
-        curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"DrawGroupNo":', '')
+        #curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"DrawGroupNo":', '')
+        #curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"DrawGroupNo":', '')
+        #curDf['etc_json'] = curDf['etc_json'].str.extract(r'(\d+)')
+        curDf['etc_json'] = curDf['etc_json'].str.extract(r'^\D*\d+\D+(\d+)')
+        
+        
+        #curDf['etc_json'] = curDf['etc_json'].str.replace('(.*){"value":{"DrawGroupNo":(.*)', r'\1\2', regex=True)
+        
+        
         df_temp = curDf.drop_duplicates(subset='etc_json')
+        targetList = df_temp['etc_json'].astype('str')
+        print(targetList)
         df_temp = df_temp.drop_duplicates(subset='item_no')
         targetList = df_temp['item_no'].astype('int')
         print(targetList)
@@ -360,12 +370,13 @@ def check_gacha():#probtest 1
 
     #for i in range(0, len(targetList)) :
     tempCount = 0
-    for target in targetList :
+    print("check_gacha...")
+    for target in tqdm(targetList) :
         tempCount +=1
         #target = int(targetList[i])
         #print(a)
         #global df
-        print(f'extracting target... {tempCount}/{len(targetList)}[{target}]')
+        #print(f'extracting target... {tempCount}/{len(targetList)}[{target}]')
 
         a = curDf[curDf["item_no"] == int(target)]
         a = a.reset_index(drop=True)
@@ -1247,11 +1258,19 @@ def check_redraw_gacha(probID : int):#probtest 14,16 (인자 2 필요)
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
 
     curDf = df[df["probability_type"] == probID]
-    curDf['etc_json'] = curDf['etc_json'].str.replace(('{"value":{"RedrawGroupNo":' or '}}'), '')
-    #curDf['temp0'] = df_temp['temp0'].str.replace('}}', '')
-    print(curDf)
 
-    del curDf
+    curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"RedrawGroupNo":', '', regex=True)
+    curDf['etc_json'] = curDf['etc_json'].str.replace('}}', '')
+    
+    curDf = curDf[curDf["etc_json"] == "10000"]
+    
+    df_temp = curDf.drop_duplicates(subset='item_no')
+    groupList = df_temp['item_no'].astype('int')
+    print(groupList)
+    
+    #print(curDf)
+
+    del curDf, df_temp
     gc.collect()
 
     #print(curDf[(curDf["probability_type"] == probID)&(df["item_no"] == int(cardID))])
@@ -2170,7 +2189,7 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
 if __name__ == "__main__" : 
-    #check_gacha()
+    check_gacha()
     #check_combine_card(2)
     #check_combine_card(3)
     # check_combine_mat()
@@ -2183,13 +2202,15 @@ if __name__ == "__main__" :
     #check_engrave()
     # check_spot_tran()  
     # check_spot_serv()  
-    check_redraw_gacha(14)
+    #check_redraw_gacha(14)
     #check_redraw_tran_combine()
     #check_redraw_serv_gacha()
     #check_redraw_serv_combine()
     # check_reinforce_slot()
     # check_reinforce_slot_ancient()
-    input("press any key to exit...")
+    
+    
+    #input("press any key to exit...")
     
     
     
