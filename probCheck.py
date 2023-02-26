@@ -5,9 +5,18 @@ import gc
 import re
 from tqdm import tqdm
 
+
+resultDir = f"./result_{time.strftime('%y%m%d_%H%M%S')}"
+if not os.path.isdir(resultDir) :
+    os.mkdir(resultDir)
+
+
 #fileName = input("확률테스트결과문서명 입력(.csv 제외) : ")
 #global df, df_target
 
+emptyLogList = []
+emptyDataList = []
+emptyProbList = []
 
 fileName = ""
 #fileName = "R2MProbabilityTestHistory_20221219_20230120.csv"
@@ -75,6 +84,7 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
     df_after = df_before.copy()
     df_after = df_after.reset_index(drop=True)
 
+
     if probID == 1:
         #print(f"probTest {probID} compare_prob")
         
@@ -83,8 +93,10 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
         
         #try:
         for i in range(len(df_after)):
-            ref0 = df_after.loc[i,"mID"]
+            #print(df_after)
+            ref0 = df_after.loc[i,"item_no"]
             ref1 = df_after.loc[i,"mName"]
+            groupID = df_after.loc[i,"groupID"]
             tempID = df_curProb.loc[((df_curProb.mArg0 == int(ref0)) & (df_curProb.mArg1 == ref1)), "mProb"].index
             #print(expectedProb)
             #df_after.loc[i,"mExpectedProb"] = df_curProb.loc[tempID[0],"mProb"]
@@ -95,12 +107,12 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
                 df_after.loc[i,"mExpectedProb"] = expectedProb
                 #print(f'[{ref0}|{ref1}] {expectedProb}')
                 #if expectedProb == 0 :
-                df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["mTestProb"])/df_after["mExpectedProb"]*100,4)
+                df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
             else : #확률표 업데이트 필요
-                print(f"확률데이터 업데이트 필요...(data/prob.csv) [probID:{probID}, {ref0}|{ref1}]")
+                emptyProbList.append(f"{probID}|{ref0}|{groupID}|{ref1}]")
         
     elif probID == 2 or probID == 3:
-        print(f"probTest {probID} compare_prob")
+        #print(f"probTest {probID} compare_prob")
         
         df_curProb = df_prob[(df_prob.index==probID)]
         df_curProb = df_curProb.reset_index(drop=True)
@@ -116,7 +128,8 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
                 df_after.loc[i,"mExpectedProb"] = expectedProb
                 df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
             else : #확률표 업데이트 필요
-                print(f"need to update prob data... [probID:{probID}, {ref0}|{ref1}]")
+                #print(f"need to update prob data... [probID:{probID}, {ref0}|{ref1}]")
+                emptyProbList.append(f"{probID}|{ref0}|{ref1}")
         
     elif probID == 4 : #인자 1개, 기획확률 ( 4, )
         
@@ -143,7 +156,7 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
         
     elif probID == 5 : #인자 2개, 아이템 제작 고유)
         
-        print(f"probTest {probID} compare_prob")
+        #print(f"probTest {probID} compare_prob")
         
         df_curProb = df_prob[(df_prob.index==probID)]
         df_curProb = df_curProb.reset_index(drop=True)
@@ -156,11 +169,8 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
             ref0 = df_after.loc[i,"mName"]
             ref1 = int(df_after.loc[i,"mRarity"])
 
-            #print(df_curProb.mArg0[0],(df_curProb.mArg1[0]))
-
-            tempID = df_curProb.loc[((df_curProb.mArg1 == ref0) & (df_curProb.mArg2 == ref1)), "mProb"].index
-            #tempID = df_curProb.loc[((df_curProb.mArg0 == ref0)&(df_curProb.mArg1 == int(ref1))) , "mProb"].index
-            #print(tempID.index[0])
+            #tempID = df_curProb.loc[((df_curProb.mArg1 == ref0) & (df_curProb.mArg2 == ref1)), "mProb"].index
+            tempID = df_curProb.loc[((df_curProb.mArg1 == ref0)), "mProb"].index
 
             if len(tempID) != 0 :
                 expectedProb = float(df_curProb.loc[tempID[0],"mProb"])
@@ -169,7 +179,6 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
                 curRarity = int(df_after.loc[i,"mRarity"])
                 
                 if curCraftType == 2 :
-                    #print("A")
                     if curRarity <= 2 :
                         expectedProb *= 0.01
                     elif curRarity == 3 :
@@ -181,7 +190,8 @@ def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
                 df_after.loc[i,"mProbDiff"] = round(abs(expectedProb - testProb)/expectedProb*100,4)
             
             else : #확률표 업데이트 필요
-                print(f"need to update prob data... [probID:{probID}, {ref0}|{ref1}]")
+                #print(f"need to update prob data... [probID:{probID}, {ref0}|{ref1}]")
+                emptyProbList.append(f"{probID}|{ref0}|{ref1}")
         
                 df_after.loc[i,"mExpectedProb"] = ""
                 df_after.loc[i,"mProbDiff"] =""
@@ -338,11 +348,19 @@ def check_gacha():#probtest 1
 
     probID = 1
 
-    outputName = f"뽑기결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    #outputName = f"{resultDir}/{resultDir}/뽑기결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/뽑기결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+
+    #emptyDataList = []
+    #emptyProbList = []
 
     global df
 
     curDf = df[df["probability_type"] == probID]
+    curDf = curDf.copy()
+    #curDf['groupID'] = ""
+    curDf['groupID'] = curDf['etc_json'].str.extract(r'(\d+)')
+    #print(curDf)
     #gachaID = input("변신 뽑기 ID 입력 > ")
     #print(df_target.loc[1,"mArg0"])
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
@@ -352,21 +370,24 @@ def check_gacha():#probtest 1
         
         #curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"DrawGroupNo":', '')
         #curDf['etc_json'] = curDf['etc_json'].str.replace('{"value":{"DrawGroupNo":', '')
-        #curDf['etc_json'] = curDf['etc_json'].str.extract(r'(\d+)')
-        curDf['etc_json'] = curDf['etc_json'].str.extract(r'^\D*\d+\D+(\d+)')
         
-        
-        #curDf['etc_json'] = curDf['etc_json'].str.replace('(.*){"value":{"DrawGroupNo":(.*)', r'\1\2', regex=True)
+        #첫번째 숫자 추출
+        curDf['groupID'] = curDf.etc_json.str.extract(r'(\d+)')
+        #두번째 숫자 추출
+        #curDf['etc_json'] = curDf['etc_json'].str.extract(r'^\D*\d+\D+(\d+)')
         
         
         df_temp = curDf.drop_duplicates(subset='etc_json')
-        targetList = df_temp['etc_json'].astype('str')
-        print(targetList)
         df_temp = df_temp.drop_duplicates(subset='item_no')
         targetList = df_temp['item_no'].astype('int')
-        print(targetList)
-        #print(targetList[0],targetList[1])
-        #targetList = groupList
+        #print(targetList)
+        groupList = df_temp['groupID'].astype('int')
+        #print(groupList)
+        # df_temp = df_temp.drop_duplicates(subset='item_no')
+        # targetList = df_temp['item_no'].astype('int')
+        # print(targetList)
+        del df_temp
+        gc.collect()
 
     #for i in range(0, len(targetList)) :
     tempCount = 0
@@ -382,32 +403,36 @@ def check_gacha():#probtest 1
         a = a.reset_index(drop=True)
 
         a["mName"] =""
-        a["mRarity"] =""
+        #a["mRarity"] =""
         a["mTime"]=""
-        a["mGroupID"]=""
+        #a["groupID"]=""
         #a["mID"]=""
 
         if len(a) == 0 :
-            print(f'no data... {target}')
+            emptyLogList.append(f'{probID}|{target}')
 
+        #print(a["groupID"])
+        #print("\nA")
         for i in range(len(a)):
             before = a.loc[i,"result_item_no"]
 
             targetType = int(a.loc[i,"probability_category"])
             targetName = ""
 
+            #print("\nA1")
             if targetType == 0 :
                 df_temp = df_item.copy()
-                targetName = "아이템"
+                targetName = "item"
             elif targetType == 1:
                 df_temp = df_tran.copy()
-                targetName = "변신"
+                targetName = "transform"
             elif targetType == 2:
                 df_temp = df_serv.copy()
-                targetName = "서번트"
+                targetName = "servant"
 
             try :
                 after = df_temp.loc[before,"mName"]
+                #print(after)
                 a.loc[i,"mName"] = after
 
             #카드 정렬용
@@ -416,14 +441,15 @@ def check_gacha():#probtest 1
                 a.loc[i,"mRarity"] = rarity
 
                 if targetType == 1 :
-                    tempGroupID = df_temp.loc[before,"mGroupID"]
-                    a.loc[i,"mGroupID"] = tempGroupID
+                    tempGroupID = df_temp.loc[before,"order"]
+                    a.loc[i,"order"] = tempGroupID
 
 
             except :
-                print(f"데이터 업데이트 필요... {targetName}, ID:{before}|{after} 누락")
+                emptyDataList.append('\n'+f"no data in {targetName}list ID:{before}|{after} ")
                 a.loc[i,"mName"] = ""
-            a = a.sort_values(by=["mRarity","mGroupID","mRarity"])
+            a = a.sort_values(by=["mRarity","groupID","mRarity"])
+            #print("\nA2")
 
             #시간표기용
             a.loc[i,"mTime"]= time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
@@ -431,12 +457,12 @@ def check_gacha():#probtest 1
             del df_temp
             gc.collect()
         
-        a["mID"] = a["item_no"]
-        a["mTestCount"] = a["test_result_count"]
-        a["mTestProb"] = a["probability"]
+        #a["mID"] = a["item_no"]
+        #a["mTestCount"] = a["test_result_count"]
+        #a["mTestProb"] = a["probability"]
 
 
-        b=a[["mTime","mID","mName","etc_json","mTestCount","mTestProb"]]
+        b=a[["mTime","item_no","groupID","mName","test_result_count","probability"]].copy()
         #b["mProb"]=""
         # for i in range(len(b)):
         #     tempProb = float(b.loc[i,"test_result_count"])*0.001
@@ -448,10 +474,10 @@ def check_gacha():#probtest 1
         
         b.rename(columns={
             'mTime':'수행시각'
-        ,'mID':'뽑기ID'
+        ,'item_no':'뽑기ID'
         ,'mName':'아이템명'
-        ,'mTestCount':'뽑기횟수'
-        ,'mTestProb':'뽑기확률(%)'
+        ,'test_result_count':'뽑기횟수'
+        ,'probability':'뽑기확률(%)'
         ,'mExpectedProb':'기대확률(%)'
         ,'mProbDiff':'오차(%)'
         }, inplace = True)
@@ -464,16 +490,17 @@ def check_gacha():#probtest 1
             b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
             
 
-        del b
+        del a,b
         gc.collect()
 
 
-    del a
-    gc.collect()
+    #del a
+    #gc.collect()
         #print(f'success, target ID : {target}')
 
 
         #print(f'run-time : {time.time()-startTime:.4f} sec')
+    #print(f'{emptyDataList=}')
     print(f'check_gacha() total-run-time : {time.time()-startTime:.4f} sec')
 
 def check_combine_card(type : int):#probtest 2,3 (type 2: 변신, 3: 서번트)
@@ -487,14 +514,15 @@ def check_combine_card(type : int):#probtest 2,3 (type 2: 변신, 3: 서번트)
     elif type == 3 :
         combineTypeName = "서번트"
 
-    outputName = f"{combineTypeName}합성_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/{combineTypeName}합성_{time.strftime('%y%m%d_%H%M%S')}.csv"
     #gachaID = input("변신 뽑기 ID 입력 > ")
     #print(df_target.loc[1,"mArg0"])
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
 
-    for target in targetList :
+    print("check_combine_card")
+    for target in tqdm(targetList) :
         global df
-        print(f'try target ID : {target}')
+        #print(f'try target ID : {target}')
 
         a = df[df["probability_type"] == probID]
         a = a[a["item_no"] == int(target)]
@@ -582,7 +610,7 @@ def check_combine_mat():#probtest 4
 
     probID = 4
 
-    outputName = f"매테합성결과_{time.strftime('%y%m%d')}.csv"
+    outputName = f"{resultDir}/매테합성결과_{time.strftime('%y%m%d')}.csv"
 
     global df
 
@@ -593,7 +621,7 @@ def check_combine_mat():#probtest 4
     a["mName"] =""
     a["mTime"]=""
 
-    for i in range(len(a)):
+    for i in tqdm(range(len(a))):
 
         before = a.loc[i,"item_no"]
 
@@ -606,16 +634,8 @@ def check_combine_mat():#probtest 4
         a.loc[i,"mTime"]= time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
             
 
-    # #전체 확률 표기
-    # b["mProb"]=""
-    # for i in range(len(b)):
-    #     tempProb = float(b.loc[i,"test_result_count"])*0.001
-    #     b.loc[i,"mProb"] = f"{tempProb:.4f}"
 
-
-    #b=a[["mTime","mName","test_result_count","probability","mExpectedProb","mProbDiff"]]
     b= compare_prob(probID,a).copy()
-    #b=b[["mTime","mName","test_result_count","probability"]]
     b=b[["mTime","mName","test_result_count","probability","mExpectedProb","mProbDiff"]]
     b.rename(columns={
         'mTime':'수행시각'
@@ -642,14 +662,16 @@ def check_craft():#probtest 5
     startTime = time.time()
     probID = 5
 
-    outputName = f"제작결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/제작결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[5,"mArg0"]).split(sep=';')
 
-    for target in targetList :
+    print("***check_craft")
+
+    for target in tqdm(targetList) :
         global df
 
-        print(f'try target ID : {target}')
+        #print(f'try target ID : {target}')
         a = df[df["probability_type"] == 5]
         a = a[a["result_item_no"] == int(target)]
         #a = a[a["item_sub_no"] == target] #합성성공:1, 합성실패:0
@@ -746,7 +768,7 @@ def check_skill():#probtest 6 (인자 불필요)
 
     probTestNo = 6
 
-    outputName = f"스킬강화결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/스킬강화결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     #targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
 
@@ -831,7 +853,7 @@ def check_change_mat():#probtest 7
     probID = 7
     probTestNo = 7
 
-    outputName = f"매테교체결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/매테교체결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
     #gachaID = input("변신 뽑기 ID 입력 > ")
     #print(df_target.loc[1,"mArg0"])
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
@@ -892,7 +914,6 @@ def check_change_mat():#probtest 7
         # c.append(b)
         # print(c)
         if not os.path.exists(outputName):
-
             b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
         else:
             b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
@@ -926,7 +947,7 @@ def check_reinforce_item():#probtest 8 (인자 불필요)
 
     probID = 8
 
-    outputName = f"아이템강화(포인트미사용)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/아이템강화(포인트미사용)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     global df
 
@@ -989,7 +1010,7 @@ def check_reinforce_item_point():#probtest 9 (인자 불필요)
 
     probID = 9
 
-    outputName = f"아이템강화(포인트사용)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/아이템강화(포인트사용)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     global df
 
@@ -1050,7 +1071,7 @@ def check_soul():#probtest 10 (인자 불필요)
 
     probID = 10
 
-    outputName = f"영혼부여결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/영혼부여결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     global df
 
@@ -1119,7 +1140,7 @@ def check_spot_tran():#probtest 12 (인자 불필요)
 
     probID = 12
 
-    outputName = f"변신휘장결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/변신휘장결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     global df
 
@@ -1190,7 +1211,7 @@ def check_spot_serv():#probtest 13 (인자 불필요)
 
     probID = 13
 
-    outputName = f"서번트휘장결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/서번트휘장결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     global df
 
@@ -1253,7 +1274,7 @@ def check_redraw_gacha(probID : int):#probtest 14,16 (인자 2 필요)
     elif probID == 16:
         probName = "서번트"
 
-    outputName = f"{probName}다시뽑기(뽑기)_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/{probName}다시뽑기(뽑기)_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
 
@@ -1360,109 +1381,12 @@ def check_redraw_gacha(probID : int):#probtest 14,16 (인자 2 필요)
 
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
-# def check_redraw_tran_gacha():#probtest 14 (인자 2 필요)
-#     startTime = time.time()
-
-#     probID = 14
-
-    
-
-#     outputName = f"변신다시뽑기(뽑기)_{time.strftime('%y%m%d_%H%M%S')}.csv"
-
-#     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
-#     #targetList = targetList_before.split(sep='|')
-
-#     for target in targetList :
-#         cardID, redrawGroupNo = target.split(sep='|')
-#         print(f'try extract target... [cardID:{cardID}, redrawGroupNo:{redrawGroupNo}]')
-#         #print(probTestNo,cardID, redrawGroupNo)
-
-#         global df
-#         a = df[(df["probability_type"] == probID)&(df["item_no"] == int(cardID))]
-#         a = a.reset_index(drop=True)
-#         #print(a)
-
-#         a["mTime"]=""
-#         a["mOriginName"]=""
-#         a["mResultName"]=""
-#         a["mRedrawGroupNo"]=""
-#         a["mGroupID"]=""
-
-#         for i in range(len(a)):
-
-#             #etc_json에서 추출
-#             tempStr = a.loc[i,"etc_json"]
-#             tempGet0 = re.search('RedrawGroupNo":(.+?)}', tempStr).group(1)
-#             a.loc[i,"mRedrawGroupNo"] = tempGet0
-
-#         a = a[(a["mRedrawGroupNo"] == redrawGroupNo)]
-#         a = a.reset_index(drop=True)
-
-#         if len(a) == 0 :
-#             print(f'no data... {cardID}|{redrawGroupNo}')
-
-#         for i in range(len(a)):
-#             try:
-#                 #카드명 적용
-#                 before0 = a.loc[i,"item_no"]
-#                 before1 = a.loc[i,"result_item_no"]
-#                 after0 = df_tran.loc[before0,"mName"]
-#                 after1 = df_tran.loc[before1,"mName"]
-#                 a.loc[i,"mOriginName"] = after0
-#                 a.loc[i,"mResultName"] = after1
-
-#                 #카드 정렬용
-#                 rarity = df_tran.loc[before1,"mRarity"]
-#                 a.loc[i,"mRarity"] = rarity
-#                 a = a.sort_values(by=["mRarity","result_item_no"])
-
-#                 tempGroupID = df_tran.loc[before1,"mGroupID"]
-#                 a.loc[i,"mGroupID"] = tempGroupID
-
-#             except :
-#                 print(f"data 업데이트 요망... Type:변신,ID:{before1} 누락")
-#                 #a.loc[i,"mOriginName"] = before1
-#                 a.loc[i,"mResultName"] = before1
-
-#             a = a.sort_values(by=["mRarity","mGroupID","mRarity"])
-
-#             #시간표기용
-#             a.loc[i,"mTime"]= time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
-                
-#         b=a[["mTime","mOriginName","mRedrawGroupNo","mResultName","test_result_count","probability"]]
-#         b = b.reset_index(drop=True)
-
-#         #b = compare_prob(probID, b, redrawGroupNo, after0)
-#         b.rename(columns={
-#         'mTime':'수행시각'
-#         #,'item_no':'아이템ID'
-#         ,'mOriginName':'교체대상카드명'
-#         ,'mRedrawGroupNo':'교체그룹ID'
-#         ,'mResultName':'교체된 카드명'
-#         ,'test_result_count':'뽑기횟수'
-#         ,'probability':'뽑기확률(%)'
-#         ,'mExpectedProb':'기대확률(%)'
-#         ,'mProbDiff':'오차(%)'
-#         }, inplace = True)
-
-
-#         if not os.path.exists(outputName):
-#             b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
-#         else:
-#             b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
-        
-
-#         del a,b
-#         gc.collect()
-
-#     print(f'total-run-time : {time.time()-startTime:.4f} sec')
-
 def check_redraw_tran_combine():#probtest 15 (인자 2 필요)
     startTime = time.time()
 
     probTestNo = 15
 
-    outputName = f"변신교체뽑기(합성획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/변신교체뽑기(합성획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1556,7 +1480,7 @@ def check_redraw_serv_gacha():#probtest 16 (인자 2 필요)
 
     probTestNo = 16
 
-    outputName = f"서번트교체뽑기(뽑기획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/서번트교체뽑기(뽑기획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1643,7 +1567,7 @@ def check_redraw_serv_combine():#probtest 17 (인자 2 필요)
 
     probTestNo = 17
 
-    outputName = f"서번트교체뽑기(합성획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/서번트교체뽑기(합성획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1731,7 +1655,7 @@ def check_reinforce_slot():#probtest 18 (인자 필요)
 
     probTestNo = 18
 
-    outputName = f"슬롯강화결과_{time.strftime('%y%m%d')}.csv"
+    outputName = f"{resultDir}/슬롯강화결과_{time.strftime('%y%m%d')}.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1824,7 +1748,7 @@ def check_reinforce_slot_ancient():#probtest 19 (인자 필요)
 
     probTestNo = 19
 
-    outputName = f"슬롯강화결과(고대주문서)_{time.strftime('%y%m%d')}.csv"
+    outputName = f"{resultDir}/슬롯강화결과(고대주문서)_{time.strftime('%y%m%d')}.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1918,7 +1842,7 @@ def check_engrave():#probtest 11 (인자 필요)
 
     probTestNo = 11
 
-    outputName = f"각인결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/각인결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
 
@@ -2080,7 +2004,7 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
 
     probID = 14
 
-    outputName = f"변신교체뽑기(뽑기획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/변신교체뽑기(뽑기획득)결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     global df
 
@@ -2189,23 +2113,23 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
 if __name__ == "__main__" : 
-    check_gacha()
+    #check_gacha()
     #check_combine_card(2)
     #check_combine_card(3)
-    # check_combine_mat()
-    # check_craft()
+    #check_combine_mat()#PASS
+    check_craft()
     # check_skill()              #CL 재생성 필요
     # check_change_mat()         #CL 재생성 필요
     # check_reinforce_item()      #CL 재생성 필요
     # check_reinforce_item_point()      #CL 재생성 필요
     # check_soul()   
-    #check_engrave()
+    # check_engrave()
     # check_spot_tran()  
     # check_spot_serv()  
-    #check_redraw_gacha(14)
-    #check_redraw_tran_combine()
-    #check_redraw_serv_gacha()
-    #check_redraw_serv_combine()
+    # check_redraw_gacha(14)
+    # check_redraw_tran_combine()
+    # check_redraw_gacha(16)#check_redraw_serv_gacha()
+    # check_redraw_serv_combine()
     # check_reinforce_slot()
     # check_reinforce_slot_ancient()
     
@@ -2213,5 +2137,11 @@ if __name__ == "__main__" :
     #input("press any key to exit...")
     
     
-    
+    emptyStr = (f"Empty Log List : {len(emptyLogList)}"+"\n" + "\n".join(emptyLogList))
+    emptyStr += (f"Empty Data List : {len(emptyDataList)}"+"\n" + "\n".join(emptyDataList))
+    emptyStr += (f"Empty Prob List : {len(emptyProbList)}"+"\n" + "\n".join(emptyProbList))
     #check_redraw_tran_gacha_all()
+
+    emptyFileName = f"{resultDir}/emptyList.txt"
+    with open(emptyFileName, "a") as f:
+        f.write(emptyStr)
