@@ -67,6 +67,10 @@ def getCsvFile(fileName):
         df_engraveSlain = df_temp.copy()
     elif "prob" in fileName :
         df_prob = df_temp.copy()
+    elif "prob" in fileName :
+        df_prob = df_temp.copy()
+    elif "webProb" in fileName :
+        df_webProb = df_temp.copy()
 
     print(f"success, get csv file : {fileName}")
 
@@ -79,6 +83,41 @@ getCsvFile(f"./data/engraveAbilityType.csv")
 getCsvFile(f"./data/engraveSlainType.csv")
 
 getCsvFile(f"./prob/prob.csv")
+
+
+df_webProb_path = f"./webProb.xlsx"
+#df_webProb = pd.read_excel(df_webProb_path)
+
+def compare_prob2(refPage : str, df_before : pd.DataFrame):
+    sheet_name = f'{refPage}'#942_0
+    df_ref = pd.read_excel(df_webProb_path, sheet_name=sheet_name, engine="openpyxl")
+    print (df_ref.columns.tolist())
+
+    #print(df_ref)
+    #print(df_before)
+    df_after = df_before.copy()
+    df_after = df_after.reset_index(drop=True)
+
+    for i in range(len(df_after)):
+        itemName = df_after.loc[i,"mName"]
+        print(itemName)
+        #row_index = df_ref.loc[df_ref['2'] == itemName, '확률(%)'].iloc[0]
+        expectedProb = df_ref.loc[df_ref[2] == itemName, 4].iloc[0]
+
+        print(expectedProb)
+
+        #expectedProb = df_after.loc[row_index,"mProb"]
+        df_after.loc[i,"mExpectedProb"] = expectedProb
+
+
+
+    del df_ref
+    gc.collect()
+
+
+    return df_after
+
+
 
 def compare_prob(probID : int, df_before : pd.DataFrame, arg0 = 0, arg1 = 0):
     df_after = df_before.copy()
@@ -570,7 +609,14 @@ def check_combine_card(type : int):#probtest 2,3 (type 2: 변신, 3: 서번트)
         #     b.loc[i,"mProb"] = f"{tempProb:.4f}"
             #b.loc[i,"mProb"] = format(tempProb, '.6f')
             #b.loc[i,"mProb"] = '{:.4f}'.format(round(tempProb,4))
-        b= compare_prob(probID,b).copy()
+        #b= compare_prob(probID,b).copy()
+
+        if type == 2 :
+            b= compare_prob2(f"942_{target}",b).copy()
+            #combineTypeName = "변신"
+        elif type == 3 :
+            b= compare_prob2(f"950_{target}",b).copy()
+            #combineTypeName = "서번트"
         
         #인덱스 > 합성종류 표기
         b= b.replace({"item_no":0},"일반합성")
@@ -2114,10 +2160,10 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
 
 if __name__ == "__main__" : 
     #check_gacha()
-    #check_combine_card(2)
+    check_combine_card(2)
     #check_combine_card(3)
     #check_combine_mat()#PASS
-    check_craft()
+    #check_craft()
     # check_skill()              #CL 재생성 필요
     # check_change_mat()         #CL 재생성 필요
     # check_reinforce_item()      #CL 재생성 필요
