@@ -48,6 +48,7 @@ def getCsvFile(fileName):
     global df_engraveAbility
     global df_engraveSlain
     global df_prob
+    global df_probInfo
 
     df_temp = pd.read_csv(fileName)
     df_temp = df_temp.reset_index(drop=True)
@@ -69,8 +70,8 @@ def getCsvFile(fileName):
         df_prob = df_temp.copy()
     elif "prob" in fileName :
         df_prob = df_temp.copy()
-    elif "webProb" in fileName :
-        df_webProb = df_temp.copy()
+    elif "probInfo" in fileName :
+        df_probInfo = df_temp.copy()
 
     print(f"success, get csv file : {fileName}")
 
@@ -83,6 +84,7 @@ getCsvFile(f"./data/engraveAbilityType.csv")
 getCsvFile(f"./data/engraveSlainType.csv")
 
 getCsvFile(f"./prob/prob.csv")
+getCsvFile(f"./probInfo.csv") #id연결용
 
 
 df_webProb_path = f"./webProb.xlsx"
@@ -508,7 +510,11 @@ def check_gacha():#probtest 1
         #     b.loc[i,"mProb"] = f"{tempProb:.4f}"
             #b.loc[i,"mProb"] = format(tempProb, '.6f')
             #b.loc[i,"mProb"] = '{:.4f}'.format(round(tempProb,4))
-        b= compare_prob(1,b).copy()
+        #b= compare_prob(1,b).copy()
+
+        refPage = "3"
+
+        b=compare_prob2(refPage,b).copy()
 
         
         b.rename(columns={
@@ -617,6 +623,7 @@ def check_combine_card(type : int):#probtest 2,3 (type 2: 변신, 3: 서번트)
         elif type == 3 :
             b= compare_prob2(f"950_{target}",b).copy()
             #combineTypeName = "서번트"
+
         
         #인덱스 > 합성종류 표기
         b= b.replace({"item_no":0},"일반합성")
