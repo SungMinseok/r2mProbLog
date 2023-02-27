@@ -66,12 +66,12 @@ def getCsvFile(fileName):
         df_engraveAbility = df_temp.copy()
     elif "engraveSlain" in fileName :
         df_engraveSlain = df_temp.copy()
-    elif "prob" in fileName :
-        df_prob = df_temp.copy()
-    elif "prob" in fileName :
-        df_prob = df_temp.copy()
     elif "probInfo" in fileName :
         df_probInfo = df_temp.copy()
+        #df_probInfo = df_probInfo.astype({'0': 'int64', '1': 'int64'})
+
+    elif "prob" in fileName :
+        df_prob = df_temp.copy()
 
     print(f"success, get csv file : {fileName}")
 
@@ -512,9 +512,16 @@ def check_gacha():#probtest 1
             #b.loc[i,"mProb"] = '{:.4f}'.format(round(tempProb,4))
         #b= compare_prob(1,b).copy()
 
-        refPage = "3"
+        gachaGroupID = int(b.loc[0,"groupID"])
+        colNum = df_probInfo.columns[df_probInfo.eq(gachaGroupID).any()][0]
+        #df.eq(gachaGroupID)
+        row = df_probInfo[df_probInfo[colNum] == gachaGroupID].index[0]
+        print(row)
 
-        b=compare_prob2(refPage,b).copy()
+        gachaGroupID = f'{row}_{colNum}'
+        print(gachaGroupID)
+
+        b=compare_prob2(gachaGroupID,b).copy()
 
         
         b.rename(columns={
@@ -2166,8 +2173,8 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
 if __name__ == "__main__" : 
-    #check_gacha()
-    check_combine_card(2)
+    check_gacha()
+    #check_combine_card(2)
     #check_combine_card(3)
     #check_combine_mat()#PASS
     #check_craft()

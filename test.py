@@ -8,7 +8,7 @@ url_list = [940, 941, 942, 943, 944, 945, 947, 1423, 946, 948, 949, 950, 951, 14
 ]
 
 # 엑셀 파일 생성
-writer = pd.ExcelWriter('table.xlsx')
+writer = pd.ExcelWriter('webProb.xlsx')
 
 for url in tqdm(url_list):
     urlPage = str(url)
@@ -33,7 +33,8 @@ for url in tqdm(url_list):
         # if i == 0:
         #     df.to_excel(writer, index=False)
         # else:
-        df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False)
+        df = df.replace('확률(%)','확률')
+        df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False, columns=None)
 
 # 엑셀 파일 저장
 writer.save()
