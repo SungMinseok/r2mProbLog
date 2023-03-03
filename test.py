@@ -37,7 +37,11 @@ for url in tqdm(url_list):
         df = df.replace('확률(%)','확률')
         df = df.replace(' ',' ')
         #df = df.drop(0, axis=0)
-        df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False, header=False)
+        if int(urlPage) >= 962 and int(urlPage) <= 973 :
+            df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False, header=True)
+
+        else : 
+            df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False, header=False)
 
 # 엑셀 파일 저장
 writer.save()
