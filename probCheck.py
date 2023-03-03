@@ -90,7 +90,7 @@ getCsvFile(f"./probInfo.csv") #id연결용
 df_webProb_path = f"./webProb.xlsx"
 #df_webProb = pd.read_excel(df_webProb_path)
 
-def compare_prob2(refPage : str, df_before : pd.DataFrame):
+def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int):
     sheet_name = f'{refPage}'#942_0
     df_ref = pd.read_excel(df_webProb_path, sheet_name=sheet_name, engine="openpyxl")
     #print (df_ref.columns.tolist())
@@ -100,18 +100,54 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame):
     df_after = df_before.copy()
     df_after = df_after.reset_index(drop=True)
 
-    for i in range(len(df_after)):
-        itemName = df_after.loc[i,"mName"]
-        #print(itemName)
-        #row_index = df_ref.loc[df_ref['2'] == itemName, '확률(%)'].iloc[0]
-        #expectedProb = df_ref.loc[df_ref[2] == itemName, 4].iloc[0]
-        expectedProb = df_ref.loc[df_ref['이름'] == itemName, '확률'].iloc[0]
+    if probID == 11 : #각인확률검사
+        df_ref = df_ref.replace('-','0')
+        df_ref.iloc[2:, 4] = df_ref.iloc[2:, 4].astype(float)
+        df_ref.iloc[2:, 7] = df_ref.iloc[2:, 7].astype(float)
+        df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+        #df_after.iloc[2:, 7] = df_after.iloc[2:, 7].astype(float)
 
-        #print(expectedProb)
+        for i in range(len(df_after)):
+            print(df_after.loc[i,"probability_category"])
+            scrollType = int(df_after.loc[i,"item_sub_no"])#일반/축복각인
+            optionName = df_after.loc[i,"probability_category"]
+            slainName = df_after.loc[i,"mSlainTypeName"]
+            abilityName = df_after.loc[i,"mAbilityTypeName"]
+            statLevel = (df_after.loc[i,"mStatLevel"])
 
-        #expectedProb = df_after.loc[row_index,"mProb"]
-        df_after.loc[i,"mExpectedProb"] = expectedProb
-        df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+            print(f'{scrollType} {optionName} {slainName} {abilityName} {statLevel}')
+
+            expectedProb = 0
+
+            #try: 
+            if scrollType == 700:
+                expectedProb = df_ref.loc[(df_ref[0] == optionName)
+                                        &(df_ref[1] == slainName)
+                                        &(df_ref[2] == abilityName)
+                                        &(df_ref[4] == statLevel)
+                                        , 5].iloc[0]
+                # expectedProb = df_ref.loc[(df_ref[0] == optionName)
+                #                         , 5].iloc[0]
+            elif scrollType == 701:
+                expectedProb = df_ref.loc[(df_ref[0] == optionName)
+                                        &(df_ref[1] == slainName)
+                                        &(df_ref[2] == abilityName)
+                                        &(df_ref[7] == statLevel)
+                                        , 8].iloc[0]
+            #except :
+            #    expectedProb = 0
+            print(expectedProb)
+            
+            df_after.loc[i,"mExpectedProb"] = float(expectedProb)
+            df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+
+    else :
+
+        for i in range(len(df_after)):
+            itemName = df_after.loc[i,"mName"]
+            expectedProb = df_ref.loc[df_ref['이름'] == itemName, '확률'].iloc[0]
+            df_after.loc[i,"mExpectedProb"] = expectedProb
+            df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
 
 
     del df_ref
@@ -2051,6 +2087,7 @@ def check_engrave():#probtest 11 (인자 필요)
 
             for i in range(len(a)):
                 #print(i)
+                defaultTypeList = [2,80] #공속 미포함
                 
                 #etc_json에서 추출
                 tempStr = a.loc[i,"etc_json"]
@@ -2072,6 +2109,20 @@ def check_engrave():#probtest 11 (인자 필요)
                 a.loc[i,"mAbilityTypeName"] = after2
 
                 statLevel = a.loc[i,"result_item_no"]                
+
+                optionID = int( df_item.loc[df_item["mName"] == after0 , "mSubType"])
+                if optionID in defaultTypeList :
+                    a=a.replace({"probability_category":0},"1단계 옵션")
+                    a=a.replace({"probability_category":1},"2단계 옵션(단검)")
+                    a=a.replace({"probability_category":2},"3단계 옵션")
+                    a=a.replace({"probability_category":3},"4단계 옵션")
+                    a=a.replace({"probability_category":4},"5단계 옵션")
+                else :
+                    a=a.replace({"probability_category":0},"1단계 옵션")
+                    a=a.replace({"probability_category":1},"2단계 옵션(공격 속도)(단검 외)")
+                    a=a.replace({"probability_category":2},"3단계 옵션")
+                    a=a.replace({"probability_category":3},"4단계 옵션")
+                    a=a.replace({"probability_category":4},"5단계 옵션")
 
                 #||일부 능력치 계수 보정■■■■■■■■■■■■■■■■■■■■■■■■■■■■■||#
                 if int(statLevel) < 0 :
@@ -2107,6 +2158,9 @@ def check_engrave():#probtest 11 (인자 필요)
                 elif "포션 회복률" in after2 :
                     statLevel *= 0.01
                     statLevel = f'{round(statLevel, 2)}'
+                elif "공격 속도" in after2 :
+                    statLevel *= 0.1
+                    statLevel = f'{round(statLevel, 1)}'
 
                 #||■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■||#
                 a.loc[i,"mStatLevel"] = statLevel
@@ -2117,7 +2171,7 @@ def check_engrave():#probtest 11 (인자 필요)
                 else :
                     a.loc[i,"mStatName"] = f'{after2} +{statLevel}'
 
-
+        
 
 
             # a = a[(a["mOriginRarity"] == rarity)]
@@ -2130,37 +2184,45 @@ def check_engrave():#probtest 11 (인자 필요)
                     
             a = a.sort_values(by=["probability_category","item_sub_no","mAbilityType","mSlainType","result_item_no"])
 
-
             b=a[["item_sub_no","mItemName","probability_category","mAbilityType","mSlainType","mSlainTypeName","mAbilityTypeName","mStatLevel","mStatName","test_result_count","probability"]]
             b = b.reset_index(drop=True)
 
-
+            #try : 
+            gachaID = int(target)
+            #print(gachaID)
+            colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+            row = df_probInfo[df_probInfo[colNum] == gachaID].index[0]
+            title = df_probInfo.loc[df_probInfo[colNum] == gachaID, 'title'].iloc[0]
+            webID = f"{row}_{str(colNum).split('.')[0]}"
+            b=compare_prob2(webID,b,11).copy()
+            #except :
+            #   emptyProbList.append(f"11|{target}|{title}|{row}|{colNum}")
             
-            b= b.replace({"probability_category":0},"1")
-            b= b.replace({"probability_category":1},"2")
-            b= b.replace({"probability_category":2},"3")
-            b= b.replace({"probability_category":3},"4")
-            b= b.replace({"probability_category":4},"5")
+            # b= b.replace({"probability_category":0},"1")
+            # b= b.replace({"probability_category":1},"2")
+            # b= b.replace({"probability_category":2},"3")
+            # b= b.replace({"probability_category":3},"4")
+            # b= b.replace({"probability_category":4},"5")
 
-            b= b.replace({"item_sub_no":700},"일반 각인")
-            b= b.replace({"item_sub_no":701},"축복 각인")
+            # b= b.replace({"item_sub_no":700},"일반 각인")
+            # b= b.replace({"item_sub_no":701},"축복 각인")
             
-            b.rename(columns={
-            'mTime':'수행시각'
-            #,'probability_category':'슬롯타입'
-            #,'item_no':'슬롯명'
-            ,'item_sub_no':'각인분류'
-            ,'mItemName':'장비명'
-            ,'probability_category':'옵션번호'
-            ,'mSlainTypeName':'슬레인타입'
-            ,'mAbilityTypeName':'능력치'
-            ,'mStatLevel':'세부수치'
-            ,'mStatName':'능력치명'
-            ,'test_result_count':'뽑기횟수'
-            ,'probability':'뽑기확률(%)'
-            ,'mExpectedProb':'기대확률(%)'
-            ,'mProbDiff':'오차(%)'
-            }, inplace = True)
+            # b.rename(columns={
+            # 'mTime':'수행시각'
+            # #,'probability_category':'슬롯타입'
+            # #,'item_no':'슬롯명'
+            # ,'item_sub_no':'각인분류'
+            # ,'mItemName':'장비명'
+            # ,'probability_category':'옵션번호'
+            # ,'mSlainTypeName':'슬레인타입'
+            # ,'mAbilityTypeName':'능력치'
+            # ,'mStatLevel':'세부수치'
+            # ,'mStatName':'능력치명'
+            # ,'test_result_count':'뽑기횟수'
+            # ,'probability':'뽑기확률(%)'
+            # ,'mExpectedProb':'기대확률(%)'
+            # ,'mProbDiff':'오차(%)'
+            # }, inplace = True)
             
             if not os.path.exists(outputName):
                 b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
