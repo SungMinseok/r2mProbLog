@@ -4,13 +4,15 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 # url 리스트
-url_list = [940, 941, 942, 943, 944, 945, 947, 1423, 946, 948, 949, 950, 951, 1404, 952, 953, 955, 1338, 1405, 954, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 1418, 1419, 1420, 1421, 974, 975, 1283, 1326, 976
-]
+#url_list = [940, 941, 942, 943, 944, 945, 947, 1423, 946, 948, 949, 950, 951, 1404, 952, 953, 955, 1338, 1405, 954, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 1418, 1419, 1420, 1421, 974, 975, 1283, 1326, 976]
 #url_list = [940]
+#url_list = [950,951]
+url_list = [943]
 
 # 엑셀 파일 생성
 writer = pd.ExcelWriter('webProb.xlsx')
 
+totalTableCount = 0
 for url in tqdm(url_list):
     urlPage = str(url)
     # url 생성
@@ -28,6 +30,7 @@ for url in tqdm(url_list):
     # 시트명 설정
     sheet_name = str(url)
 
+
     # pandas 모듈을 사용하여 테이블을 DataFrame으로 변환하여 시트에 저장
     for i, table in enumerate(tables):
         df = pd.read_html(str(table))[0]
@@ -35,7 +38,8 @@ for url in tqdm(url_list):
         #     df.to_excel(writer, index=False)
         # else:
         df = df.replace('확률(%)','확률')
-        df = df.replace(' ',' ')
+        df = df.astype(str).apply(lambda x: x.str.replace('\xa0', ' '))
+        #df = df.replace(' ',' ')
         #df = df.drop(0, axis=0)
         if int(urlPage) >= 962 and int(urlPage) <= 973 :
             df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False, header=True)
@@ -43,5 +47,9 @@ for url in tqdm(url_list):
         else : 
             df.to_excel(writer, sheet_name=f'{urlPage}_{i}', index=False, header=False)
 
+        totalTableCount += 1
+
+
 # 엑셀 파일 저장
 writer.save()
+print(totalTableCount)
