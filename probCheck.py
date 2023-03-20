@@ -203,14 +203,15 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
             
             
             try :
-                if probID == 14 or probID == 16 : #교체뽑기 확률 환산용
-                    print("1")
+                if probID == 14 or probID == 15 or probID == 16 or probID == 17 : #교체뽑기 확률 환산용
+                    #print("1")
                     rootProb = df_ref.loc[(df_ref['이름'] == rootItemName), '확률']
-                    print("1")
+                    #print("1")
                     fixedTotalProb = df_ref['확률'].sum() - rootProb
-                    print("1")
+                    #print("1")
                     df_ref['확률'] = round(df_ref['확률']  * 100 / fixedTotalProb[0] ,4)
-                    print("1")
+                    #print("1")
+
     
                 expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
                 df_after.loc[i,"mExpectedProb"] = expectedProb
@@ -220,6 +221,8 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 emptyProbList.append(f'{probID}|{itemName}')
                 df_after.loc[i,"mExpectedProb"] = ""
                 df_after.loc[i,"mProbDiff"] = ""
+
+            #print(rootProb, fixedTotalProb)
 
     del df_ref
     gc.collect()
@@ -247,7 +250,7 @@ def getWebID(target, mID = [int]):
     else : #해당 행에서 검색
         webID = mID[0]
         for id in mID :
-            print(id)
+            #print(id)
             try :
                 colNum =  df_probInfo.columns[df_probInfo.loc[df_probInfo.index==id].eq(gachaID).any()][0]
                 webID = f"{id}_{str(colNum).split('.')[0]}"
@@ -1364,22 +1367,25 @@ def check_redraw_gacha(probID : int):#probtest 14,16 (인자 2 필요)
 
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
-def check_redraw_tran_combine(probID):#probtest 15 (인자 2 필요)
+def check_redraw_tran_combine(probID):#probtest 15, 17 (인자 2 필요)
     startTime = time.time()
 
     #probID = 15
     if probID == 15:
         probName = "변신"
+    elif probID == 17:
+        probName = "서번트"
+
 
     #outputName = f"{resultDir}/변신교체뽑기(합성획득)_{time.strftime('%y%m%d_%H%M%S')}.csv"
-    outputName = f"{resultDir}/{probName}교체뽑기(합성).csv"
+    outputName = f"{resultDir}/{probName}교체뽑기(합성)_{time.strftime('%y%m%d_%H%M%S')}.csv"
 
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
 
     for target in tqdm(targetList) :
         cardID, rarity = target.split(sep='|')
-        print(f'try extract target... [cardID:{cardID}, rarity:{rarity}]')
+        #print(f'try extract target... [cardID:{cardID}, rarity:{rarity}]')
         #print(probTestNo,cardID, redrawGroupNo)
 
         global df
@@ -1422,9 +1428,9 @@ def check_redraw_tran_combine(probID):#probtest 15 (인자 2 필요)
             #시간표기용
             #a.loc[i,"mTime"]= time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
                 
-        b=a[["mOriginName","item_sub_no","mResultName","test_result_count","probability"]]
+        b=a[["mOriginName","mResultName","test_result_count","probability"]]
         b = b.reset_index(drop=True)
-        print(b)
+        #print(b)
 
         if probID == 15 :
             rowID = [943]
@@ -1435,9 +1441,22 @@ def check_redraw_tran_combine(probID):#probtest 15 (인자 2 필요)
         b = compare_prob2(webID, b, probID,args = cardID)
 
         
-        b= b.replace({"item_sub_no":2},"희귀합성")
-        b= b.replace({"item_sub_no":3},"영웅합성")
-        b= b.replace({"item_sub_no":4},"전설합성")
+        # b= b.replace({"item_sub_no":2},"희귀합성")
+        # b= b.replace({"item_sub_no":3},"영웅합성")
+        # b= b.replace({"item_sub_no":4},"전설합성")
+
+        # title = ""
+        # rarity = int(rarity)
+        # if rarity == 0 :
+        #     title = "일반 합성"
+        # elif rarity == 1 :
+        #     title = "고급 합성"
+        # elif rarity == 2 :
+        #     title = "희귀 합성"
+        # elif rarity == 3 :
+        #     title = "영웅 합성"
+        # elif rarity == 4 :
+        #     title = "전설 합성"
 
         
         b.rename(columns={
@@ -1452,11 +1471,13 @@ def check_redraw_tran_combine(probID):#probtest 15 (인자 2 필요)
         ,'mProbDiff':'오차(%)'
         }, inplace = True)
 
-        if not os.path.exists(outputName):
-            b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
-        else:
-            b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
+        # if not os.path.exists(outputName):
+        #     b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
+        # else:
+        #     b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
         
+
+        makeCsv(outputName, target, b)
 
         del a,b
         gc.collect()
@@ -2141,9 +2162,9 @@ if __name__ == "__main__" :
     # check_spot_tran()  
     # check_spot_serv()  
     #check_redraw_gacha(14)             #230307
-    check_redraw_tran_combine(15)
+    #check_redraw_tran_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
     #check_redraw_gacha(16)             #230317
-    #check_redraw_tran_combine(17)
+    check_redraw_tran_combine(17)       #230320
     # check_reinforce_slot()
     # check_reinforce_slot_ancient()
     
