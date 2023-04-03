@@ -95,10 +95,11 @@ df_webProb_path = f"./webProb.xlsx"
 #df_webProb = pd.read_excel(df_webProb_path)
 
 def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrder = False, targetColName = "이름", refColName = "확률" ,args = []):
-    """
-    확률비교 by getWebProb.py
+    """확률비교 by getWebProb.py,예외처리 A-2 : targetColName 변경 필요
 
-    예외처리 A-2 : targetColName 변경 필요
+    Arg:
+        refPage : 확률고지표 시트명
+
     """
     
     
@@ -119,14 +120,14 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
         #df_after.iloc[2:, 7] = df_after.iloc[2:, 7].astype(float)
 
         for i in range(len(df_after)):
-            print(df_after.loc[i,"probability_category"])
+            #print(df_after.loc[i,"probability_category"])
             scrollType = int(df_after.loc[i,"item_sub_no"])#일반/축복각인
             optionName = df_after.loc[i,"probability_category"]
             slainName = df_after.loc[i,"mSlainTypeName"]
             abilityName = df_after.loc[i,"mAbilityTypeName"]
             statLevel = (df_after.loc[i,"mStatLevel"])
 
-            print(f'{scrollType} {optionName} {slainName} {abilityName} {statLevel}')
+            #print(f'{scrollType} {optionName} {slainName} {abilityName} {statLevel}')
 
             expectedProb = 0
 
@@ -147,10 +148,22 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                                         , 8].iloc[0]
             #except :
             #    expectedProb = 0
-            print(expectedProb)
+            #print(expectedProb)
+            if scrollType == 701 :
+                print("HERE")
             
-            df_after.loc[i,"mExpectedProb"] = float(expectedProb)
-            df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+            try :
+                df_after.loc[i,"mExpectedProb"] = float(expectedProb)
+            except Exception as e: 
+                print(e)
+
+        #print(df_after[i])
+        try :
+            df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"].astype(float))/df_after["mExpectedProb"]*100,4)
+        except Exception as e: 
+            print(e)
+
+        print(df_after)
 
     elif probID == 5 : #확률참조 두개 열
 
@@ -178,6 +191,38 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
             except IndexError:
                 print(f'{probID}|{itemName}')
                 emptyProbList.append(f'{probID}|{itemName}')
+                df_after.loc[i,"mExpectedProb"] = ""
+                df_after.loc[i,"mProbDiff"] = ""
+
+    elif probID == 6 : #스킬 예외(확률표의 열 두개 > 한개로 합쳐야됨)
+
+        for i in range(len(df_after)):
+            #print(i)
+            skillName = df_after.loc[i,"mName"]
+            level = df_after.loc[i,"mLevel"]
+            levelAfter = f'{level} → {int(level)+1}'
+            prob = df_after.loc[i,"probability"]
+
+
+
+            # if "트리플" in skillName and "4 → 5" in levelAfter :
+            #     skillName = skillName.replace('트리플', "쿼드러플")
+
+            #print(skillName,level,prob)
+            try : 
+                try :
+                    expectedProb = df_ref.loc[(df_ref["스킬 이름"] == skillName)&(df_ref["강화 단계"] == levelAfter), "확률"].iloc[0]
+                except:
+                    skillName = skillName.replace('트리플', "쿼드러플")
+                    expectedProb = df_ref.loc[(df_ref["스킬 이름"] == skillName)&(df_ref["강화 단계"] == levelAfter), "확률"].iloc[0]
+
+                df_after.loc[i,"mExpectedProb"] = expectedProb
+                probDiff = round(abs(expectedProb - prob)/expectedProb*100,4)
+                #print(skillName,level,prob,expectedProb,probDiff)
+                df_after.loc[i,"mProbDiff"] = probDiff
+            except Exception as e:
+                print(f'{e},{probID}|{skillName}')
+                emptyProbList.append(f'{probID}|{skillName}')
                 df_after.loc[i,"mExpectedProb"] = ""
                 df_after.loc[i,"mProbDiff"] = ""
 
@@ -660,22 +705,40 @@ def check_combine_mat():#probtest 4
     print(f'check_combine_mat() total-run-time : {time.time()-startTime:.4f} sec')
 
 def check_craft():#probtest 5
+    """제작확률
+    
+    타겟 리스트 : 전체로그에서 뽑아옴, 별도 입력 필요 없음
+    
+    """
     startTime = time.time()
     probID = 5
 
-    outputName = f"{resultDir}/제작결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/제작.csv"
 
-    targetList = str(df_target.loc[5,"mArg0"]).split(sep=';')
+    #targetList = str(df_target.loc[5,"mArg0"]).split(sep=';')
+    global df
+    targetTemp = df[df["probability_type"] == 5]#.drop_duplicates(subset='result_item_no')
+
+    #targetList = set(df.loc[df["probability_type"] == 5,'result_item_no'].drop_duplicates(subset='etc_json').to_list())
+    targetList = targetTemp['result_item_no'].drop_duplicates().to_list()
+
+    del targetTemp
+    gc.collect()
+
+        #df_temp = curDf.drop_duplicates(subset='etc_json')
+
+    #print(targetList)
 
     print("***check_craft")
 
+    curDf = df[df["probability_type"] == 5]
+
     for target in tqdm(targetList) :
-        global df
 
         #print(f'try target ID : {target}')
-        a = df[df["probability_type"] == 5]
-        a = a[a["result_item_no"] == int(target)]
+        a = curDf[curDf["result_item_no"] == int(target)]
         #a = a[a["item_sub_no"] == target] #합성성공:1, 합성실패:0
+        #print(a)
 
         a = a.sort_values(by=["item_sub_no"],ascending=False)
         a = a.reset_index(drop=True)
@@ -705,11 +768,16 @@ def check_craft():#probtest 5
             before = a.loc[i,"result_item_no"]
             #before1 = a.loc[i,"result_item_no"]
 
-            after = df_item.loc[before,"mName"]
-            after1 = df_item.loc[before,"mRarity"]
-            a.loc[i,"mName"] = after
-            a.loc[i,"mRarity"] = after1
-
+            try: 
+                after = df_item.loc[before,"mName"]
+                after1 = df_item.loc[before,"mRarity"]
+                a.loc[i,"mName"] = after
+                a.loc[i,"mRarity"] = after1
+            except : 
+                emptyDataList.append('\n'+f"no data in item list ID:{before} ")
+                a.loc[i,"mName"] = before
+                a.loc[i,"mRarity"] = ""
+                continue
             #a = a.sort_values(by=["item_no"])   
 
 
@@ -737,7 +805,8 @@ def check_craft():#probtest 5
         #b=a[["mTime","mName","probability","mSuccessRate","mGreatSuccessCount","mGreatSuccessRate"]]
         b = b.reset_index(drop=True)
 
-
+        #print(b)
+        #print("B")
         b=b[["mTime","mName","item_sub_no","test_result_count","mProb","mExpectedProb","mProbDiff"]]
 
         b= b.replace({"item_sub_no":1},"일반성공")
@@ -761,54 +830,68 @@ def check_craft():#probtest 5
             b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
         
 
-        del a,b
+        del a, b
         gc.collect()
+    del curDf
+    gc.collect()
 
     print(f'check_craft() total-run-time : {time.time()-startTime:.4f} sec')
 
 def check_skill():#probtest 6 (인자 불필요)
+    """스킬강화 확률
+    
+    Target:
+        probTarget.csv 입력 불필요
+
+    ProbInfo:
+        probInfo.csv 입력 불필요
+    """
     startTime = time.time()
 
-    probTestNo = 6
+    probID = 6
 
-    outputName = f"{resultDir}/스킬강화_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/스킬강화.csv"
 
     global df
 
-    a = df[df["probability_type"] == probTestNo]
+    a = df[df["probability_type"] == probID]
     a = a[a["result_item_no"] == 1]
     a = a.reset_index(drop=True)
 
     a["mName"]=""
+    a["mLevel"]=""
     a["mSuccessCount"]=""
     a["mSuccessRate"]=""
-    a["mOrder"]=0
+    a["order"]=0
+
 
     for i in range(len(a)):
 
         try :
             before = a.loc[i,"item_no"]
-            after = df_skill.loc[before,"mDesc"]
-            a.loc[i,"mName"] = after
+            level = df_skill.loc[before,"level"]
+            skillName = df_skill.loc[before,"skillName"]
+            order = df_skill.loc[before,"order"]
+            a.loc[i,"mLevel"] = level
+            a.loc[i,"mName"] = skillName
+            a.loc[i,"order"] = int(order)
         except :
             print("no ID")
             
-    b=a[["mTime","item_no","mName","test_result_count","probability"]]
+    b=a[["order","mName","mLevel","test_result_count","probability"]]
     b = b.reset_index(drop=True)
+    
+    b = b.sort_values(by=["order"])
 
-    #b = compare_prob(6,b)
+    b=compare_prob2("1283_0",b,probID)
 
-    #전체 확률 표기
-    # #b["mProb"]=""
-    # for i in range(len(b)):
-    #     tempProb0 = float(b.loc[i,"test_result_count"])*0.001
-    #     b.loc[i,"mSuccessRate"] = f"{tempProb0:.4f}"
+    b=b[["mName","mLevel","test_result_count","probability","mExpectedProb","mProbDiff"]]
 
-        
     b.rename(columns={
         'mTime':'수행시각'
-    ,'item_no':'스킬명'
+    ,'item_no':'스킬ID'
     ,'mName':'강화대상'
+    ,'mLevel':'강화대상레벨'
     ,'test_result_count':'강화성공횟수'
     ,'probability':'강화성공확률(%)'
     ,'mExpectedProb':'기대확률(%)'
@@ -825,12 +908,11 @@ def check_skill():#probtest 6 (인자 불필요)
 def check_change_mat():#probtest 7
     startTime = time.time()
     probID = 7
-    probTestNo = 7
 
-    outputName = f"{resultDir}/매테교체결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/매테교체.csv"
     #gachaID = input("변신 뽑기 ID 입력 > ")
     #print(df_target.loc[1,"mArg0"])
-    targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
+    targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
 
     #c=pd.DataFrame(columns=["mTime","item_no","mRarity","mName","test_result_count"])
     
@@ -838,9 +920,9 @@ def check_change_mat():#probtest 7
         eachStartTime = time.time()
         
         global df
-        print(f'try target ID : {target}')
+        #print(f'try target ID : {target}')
 
-        a = df[df["probability_type"] == probTestNo]
+        a = df[df["probability_type"] == probID]
         #print(a)
         a = a[a["item_no"] == int(target)]
         a = a.head(4)
@@ -869,6 +951,7 @@ def check_change_mat():#probtest 7
             
 
         b=a[["mTime","item_no","mRarity","mName","test_result_count","probability"]]
+       # b=a[["mTime","item_no","mRarity","mName","test_result_count","probability","mExpectedProb","mProbDiff"]]
         #b["mProb"]=""
         # for i in range(len(b)):
         #     tempProb = float(b.loc[i,"test_result_count"])*0.001
@@ -885,13 +968,7 @@ def check_change_mat():#probtest 7
         ,'mProbDiff':'오차(%)'
         }, inplace = True)
     
-        # c.append(b)
-        # print(c)
-        if not os.path.exists(outputName):
-            b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
-        else:
-            b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",header=False,mode='a')
-            
+        makeCsv(outputName,"noname",b)
         
 
         del a
@@ -1654,7 +1731,7 @@ def check_reinforce_slot():#probtest 18 (인자 필요)
 
     probTestNo = 18
 
-    outputName = f"{resultDir}/슬롯강화결과_{time.strftime('%y%m%d')}.csv"
+    outputName = f"{resultDir}/슬롯강화.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1747,7 +1824,7 @@ def check_reinforce_slot_ancient():#probtest 19 (인자 필요)
 
     probTestNo = 19
 
-    outputName = f"{resultDir}/슬롯강화결과(고대주문서)_{time.strftime('%y%m%d')}.csv"
+    outputName = f"{resultDir}/슬롯강화(고대주문서).csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1841,7 +1918,7 @@ def check_engrave():#probtest 11 (인자 필요)
 
     probTestNo = 11
 
-    outputName = f"{resultDir}/각인결과_{time.strftime('%y%m%d_%H%M%S')}.csv"
+    outputName = f"{resultDir}/각인.csv"
 
     targetList = str(df_target.loc[probTestNo,"mArg0"]).split(sep=';')
 
@@ -1849,11 +1926,11 @@ def check_engrave():#probtest 11 (인자 필요)
         print(f'extracting target... [itemID:{target}]')
         #print(probTestNo,cardID, redrawGroupNo)
 
-        for i in range(0,2):
+        for j in range(1,2):
 
             global df
 
-            if i == 0 :
+            if j == 0 :
                 scrollID = 700
             else : 
                 scrollID = 701
@@ -1872,6 +1949,8 @@ def check_engrave():#probtest 11 (인자 필요)
             a["mNormalCount"]=""
             a["mBlessCount"]=""
             a["mStatName"]=""
+            a["mExpectedProb"]=""
+            a["mProbDiff"]=""
             
 
             for i in range(len(a)):
@@ -1949,7 +2028,16 @@ def check_engrave():#probtest 11 (인자 필요)
                     statLevel = f'{round(statLevel, 2)}'
                 elif "공격 속도" in after2 :
                     statLevel *= 0.1
-                    statLevel = f'{round(statLevel, 1)}'
+                    if statLevel < 1 :
+                        statLevel = f'{round(statLevel, 1)}'
+                    elif statLevel < 1.5 :
+                        statLevel = f'{round(statLevel, 1)+0.01}'
+                    elif statLevel < 1.8 :
+                        statLevel = f'{round(statLevel, 1)+0.02}'
+                    elif statLevel < 2 :
+                        statLevel = f'{round(statLevel, 1)+0.03}'
+                    else:
+                        statLevel = f'{round(statLevel, 1)+0.04}'
 
                 #||■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■||#
                 a.loc[i,"mStatLevel"] = statLevel
@@ -1966,26 +2054,30 @@ def check_engrave():#probtest 11 (인자 필요)
             # a = a[(a["mOriginRarity"] == rarity)]
             # a = a.reset_index(drop=True)
 
-            for i in range(len(a)):
-
-                #시간표기용
-                a.loc[i,"mTime"]= time.strftime('%Y-%m-%d %H:%M', time.localtime(time.time()))
                     
             a = a.sort_values(by=["probability_category","item_sub_no","mAbilityType","mSlainType","result_item_no"])
 
-            b=a[["item_sub_no","mItemName","probability_category","mAbilityType","mSlainType","mSlainTypeName","mAbilityTypeName","mStatLevel","mStatName","test_result_count","probability"]]
+            b=a[["item_sub_no","mItemName","probability_category","mAbilityType","mSlainType","mSlainTypeName","mAbilityTypeName","mStatLevel","mStatName","test_result_count","probability","mExpectedProb","mProbDiff"]]
             b = b.reset_index(drop=True)
 
+
+            colNum = -1           
+            row= -1
+            title = ""
             #try : 
-            gachaID = int(target)
+            try : 
+                gachaID = int(target)
+                colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+            except:
+                gachaID = target
+                colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
             #print(gachaID)
-            colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
             row = df_probInfo[df_probInfo[colNum] == gachaID].index[0]
             title = df_probInfo.loc[df_probInfo[colNum] == gachaID, 'title'].iloc[0]
             webID = f"{row}_{str(colNum).split('.')[0]}"
             b=compare_prob2(webID,b,11).copy()
             #except :
-            #   emptyProbList.append(f"11|{target}|{title}|{row}|{colNum}")
+            #    emptyProbList.append(f"11|{target}|{title}|{row}|{colNum}")
             
             # b= b.replace({"probability_category":0},"1")
             # b= b.replace({"probability_category":1},"2")
@@ -2143,16 +2235,16 @@ if __name__ == "__main__" :
     #check_combine_card(3)              #230307
     #check_combine_mat()                #230307
     #check_craft()                      #230307
-    #check_skill()                      #진행중
+    #check_skill()                      #230403
     #check_change_mat()         
     #check_reinforce_item()     
     #check_reinforce_item_point()  
     #check_soul()   
-    #check_engrave()
+    check_engrave()
     #check_spot_tran()                   #변신/서번트합치자
     #check_spot_serv()  
-    check_redraw_gacha(14)             #230307
-    check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
+    #check_redraw_gacha(14)             #230307
+    #check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
     #check_redraw_gacha(16)             #230317
     #check_redraw_combine(17)      #230320
     #check_reinforce_slot()
