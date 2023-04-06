@@ -348,14 +348,27 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
             
             if probID == 14 or probID == 15 or probID == 16 or probID == 17 : #교체 확률 환산용
                 #print("1")
-                rootProb = df_ref.loc[(df_ref['이름'] == rootItemName), '확률']
+                rootProb = df_ref.loc[(df_ref['이름'] == rootItemName), '확률'].iloc[0]
                 #print("1")
+                #if refPage ==
+                try: 
+                    df_ref.iloc[1:, 2] = df_ref.iloc[1:, 2].astype(float)
+                except:
+                    try:
+                        df_ref.iloc[1:, 3] = df_ref.iloc[1:, 3].astype(float)
+                    except:
+                        print("do nothing")
+                        #df_ref.iloc[1:, 5] = df_ref.iloc[1:, 5].astype(float)
+
+                #df_ref.iloc[1:, 4] = df_ref.iloc[1:, 4].astype(float)
+
                 fixedTotalProb = df_ref['확률'].sum() - rootProb
                 #print("1")
-                try:
-                    df_ref['확률'] = round(df_ref['확률']  * 100 / fixedTotalProb[0] ,4)
-                except:
-                    continue
+                #try:
+                df_ref['확률'] = round(df_ref['확률']  * 100 / fixedTotalProb ,4)
+                #except Exception as e:
+                #    print(e)
+                #    continue
                 #print("1")
 
             """
@@ -421,6 +434,10 @@ def getWebID(target, mID = [int]):
     return webID
 
 def check_gacha():#probtest 1
+    """뽑기
+    
+    probTarget 입력 필요
+    """
     startTime = time.time()
 
     probID = 1
@@ -2414,15 +2431,15 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
 if __name__ == "__main__" : 
-    #check_gacha()                      #230307 #230330
+    check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
     #check_combine_card(2)              #230307
     #check_combine_card(3)              #230307
     #check_combine_mat()                #230307
     #check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
     #check_skill()                      #230403
     #check_change_mat()                  #230404
-    check_reinforce_item()              #230405
-    check_reinforce_item_point()        #230405
+    #check_reinforce_item()              #230405
+    #check_reinforce_item_point()        #230405
     #check_soul()   
     #check_engrave()
     #check_spot_tran()                   #변신/서번트합치자
