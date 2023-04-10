@@ -211,7 +211,7 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
 
         #print(df_after)
 
-    elif probID == 5 : #확률참조 두개 열
+    elif probID == 5 : #제작 확률참조 두개 열
 
         for i in range(len(df_after)):
             itemName = df_after.loc[i,"mName"]
@@ -230,15 +230,16 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
 
                 if getType == 2:
-                    expectedProb = float(expectedProb) * float(basicProb) * 0.001
+                    expectedProb = float(expectedProb) * float(basicProb) * 0.01
 
                 df_after.loc[i,"mExpectedProb"] = expectedProb
-                df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
             except IndexError:
                 print(f'{probID}|{itemName}')
                 emptyProbList.append(f'{probID}|{itemName}')
-                df_after.loc[i,"mExpectedProb"] = ""
-                df_after.loc[i,"mProbDiff"] = ""
+                df_after.loc[i,"mExpectedProb"] = -1
+                #df_after.loc[i,"mProbDiff"] = ""
+        df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+
 
     elif probID == 6 : #스킬 예외(확률표의 열 두개 > 한개로 합쳐야됨)
 
@@ -272,7 +273,7 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 df_after.loc[i,"mExpectedProb"] = ""
                 df_after.loc[i,"mProbDiff"] = ""
     
-    elif probID == 7 : #제작
+    elif probID == 7 : #???
 
         for i in range(len(df_after)):
             beforeName = df_after.loc[i,"beforeName"]
@@ -315,9 +316,6 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 df_after.loc[i,"mExpectedProb"] = ""
                 df_after.loc[i,"mProbDiff"] = ""
 
-    
-    
-    
     elif inOrder: ##검색없이 로그 순서대로 : 4
 
         for i in range(len(df_after)):
@@ -378,13 +376,23 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
             """
             try :
                 expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
+                #prob = 
                 df_after.loc[i,"mExpectedProb"] = expectedProb
-                df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
-            except :
-                emptyProbList.append(f'{probID}|{itemName}')
-                df_after.loc[i,"mExpectedProb"] = ""
-                df_after.loc[i,"mProbDiff"] = ""
+                #df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+                #df_after.loc[i,"mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+            except Exception as e:
+                print(e)
+                errorStr = f'{probID=} {refPage=} {itemName=}'
+                print(errorStr)
+                emptyProbList.append(errorStr)
+                df_after.loc[i,"mExpectedProb"] = -1
+                #df_after.loc[i,"mProbDiff"] = #"=ABS(OFFSET($A$1,ROW()-1,COLUMN()-3)-OFFSET($A$1,ROW()-1,COLUMN()-2))/OFFSET($A$1,ROW()-1,COLUMN()-2)*100"
+
+                continue
+
             #중단점
+        df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
+        
 
     del df_ref
     gc.collect()
@@ -655,7 +663,7 @@ def check_combine_card(type : int):#probtest 2,3 (type 2: 변신, 3: 서번트)
     elif type == 3 :
         combineTypeName = "서번트"
 
-    outputName = f"{resultDir}/{combineTypeName}합성.csv"
+    outputName = f"{resultDir}/{combineTypeName}교체.csv"
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
 
     print("check_combine_card")
@@ -734,15 +742,15 @@ def check_combine_card(type : int):#probtest 2,3 (type 2: 변신, 3: 서번트)
         title = ""
         targetRarity = int(a.loc[0,"item_no"])
         if targetRarity == 0 :
-            title = "일반 합성"
+            title = "일반 교체"
         elif targetRarity == 1 :
-            title = "고급 합성"
+            title = "고급 교체"
         elif targetRarity == 2 :
-            title = "희귀 합성"
+            title = "희귀 교체"
         elif targetRarity == 3 :
-            title = "영웅 합성"
+            title = "영웅 교체"
         elif targetRarity == 4 :
-            title = "전설 합성"
+            title = "전설 교체"
 
 
         b.rename(columns={
@@ -814,15 +822,15 @@ def check_combine_mat():#probtest 4
     # title = ""
     # rarity = int(rarity)
     # if rarity == 0 :
-    #     title = "일반 합성"
+    #     title = "일반 교체"
     # elif rarity == 1 :
-    #     title = "고급 합성"
+    #     title = "고급 교체"
     # elif rarity == 2 :
-    #     title = "희귀 합성"
+    #     title = "희귀 교체"
     # elif rarity == 3 :
-    #     title = "영웅 합성"
+    #     title = "영웅 교체"
     # elif rarity == 4 :
-    #     title = "전설 합성"
+    #     title = "전설 교체"
 
     # if not os.path.exists(outputName):
     #     b.to_csv(outputName,sep=',',index=False,encoding="utf-8-sig",mode='w')
@@ -1109,7 +1117,24 @@ def check_change_mat():#probtest 7
         ,'mProbDiff':'오차(%)'
         }, inplace = True)
     
-        makeCsv(outputName,"noname",b)
+
+        title = ""
+        rarity = int(rarity)
+        if rarity == 0 :
+            title = "일반 교체"
+        elif rarity == 1 :
+            title = "고급 교체"
+        elif rarity == 2 :
+            title = "희귀 교체"
+        elif rarity == 3 :
+            title = "영웅 교체"
+        elif rarity == 4 :
+            title = "전설 교체"
+        elif rarity == 5 :
+            title = "초월 교체"
+
+
+        makeCsv(outputName,title,b)
         
 
         del a
@@ -1597,7 +1622,7 @@ def check_redraw_combine(probID):#probtest 15, 17 (인자 2 필요)
 
 
     #outputName = f"{resultDir}/변신교체(합성획득)_{time.strftime('%y%m%d_%H%M%S')}.csv"
-    outputName = f"{resultDir}/{probName}교체(합성).csv"
+    outputName = f"{resultDir}/{probName}교체(교체).csv"
 
     targetList = str(df_target.loc[probID,"mArg0"]).split(sep=';')
     #targetList = targetList_before.split(sep='|')
@@ -1667,15 +1692,15 @@ def check_redraw_combine(probID):#probtest 15, 17 (인자 2 필요)
         # title = ""
         # rarity = int(rarity)
         # if rarity == 0 :
-        #     title = "일반 합성"
+        #     title = "일반 교체"
         # elif rarity == 1 :
-        #     title = "고급 합성"
+        #     title = "고급 교체"
         # elif rarity == 2 :
-        #     title = "희귀 합성"
+        #     title = "희귀 교체"
         # elif rarity == 3 :
-        #     title = "영웅 합성"
+        #     title = "영웅 교체"
         # elif rarity == 4 :
-        #     title = "전설 합성"
+        #     title = "전설 교체"
 
         
         b.rename(columns={
@@ -2127,8 +2152,8 @@ def check_engrave():#probtest 11 (인자 필요)
             for i in tqdm(range(len(a))):
                 
                 """mSubType"""
-                defaultTypeList = [2,80] #나이트단검,어쌔신단검 subType (공속 미포함)
-                defaultTypeList1 = [8,78] #나이트단검,어쌔신단검 subType (공속 미포함)
+                defaultTypeList = [2,80] #나이트단검,나이트대검,어쌔신단검 subType (공속 미포함)
+                defaultTypeList1 = [8,4,78] #나이트단검,어쌔신단검 subType (공속 미포함)
                 defaultTypeList2 = [14] #장갑(공속)  
                 defaultTypeList3 = [15] #신발(이속)  
                 
@@ -2236,6 +2261,9 @@ def check_engrave():#probtest 11 (인자 필요)
                     numbers = [0.28, 0.57, 0.85, 1.14, 1.42, 1.71, 2.0, 2.28, 2.57, 2.85]
                     statLevel = numbers[int(statLevel)-1]
 
+                elif "경험치 획득" in after2 :
+                    statLevel *= 0.01
+                    statLevel = f'{round(statLevel, 2)}'
 
                 #||■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■||#
                 a.loc[i,"mStatLevel"] = statLevel
@@ -2255,7 +2283,7 @@ def check_engrave():#probtest 11 (인자 필요)
                     
             a = a.sort_values(by=["probability_category","item_sub_no","mAbilityType","mSlainType","result_item_no"])
 
-            b=a[["item_sub_no","mItemName","probability_category","mAbilityType","mSlainType","mSlainTypeName","mAbilityTypeName","mStatLevel","mStatName","test_result_count","probability","mExpectedProb","mProbDiff"]]
+            b=a[["item_sub_no","item_no","mItemName","probability_category","mSlainTypeName","mAbilityTypeName","mStatLevel","mStatName","test_result_count","probability","mExpectedProb","mProbDiff"]]
             b = b.reset_index(drop=True)
 
 
@@ -2275,19 +2303,27 @@ def check_engrave():#probtest 11 (인자 필요)
             webID = f"{row}_{str(colNum).split('.')[0]}"
             b=compare_prob2(webID,b,11).copy()
 
-            b=b[["item_sub_no","mItemName","probability_category","mStatName","test_result_count","probability","mExpectedProb","mProbDiff"]]
+
+
+
+            """확률검증용"""
+            #b=b[["item_sub_no","mItemName","probability_category","mStatName","test_result_count","probability","mExpectedProb","mProbDiff"]]
+
+
+            """각인확인용(대만)"""
+            #b=b[["item_sub_no","mItemName","probability_category","mStatName","test_result_count","probability","mExpectedProb","mProbDiff"]]
 
             #except :
             #    emptyProbList.append(f"11|{target}|{title}|{row}|{colNum}")
             
-            # b= b.replace({"probability_category":0},"1")
-            # b= b.replace({"probability_category":1},"2")
-            # b= b.replace({"probability_category":2},"3")
-            # b= b.replace({"probability_category":3},"4")
-            # b= b.replace({"probability_category":4},"5")
+            b= b.replace({"probability_category":0},"1")
+            b= b.replace({"probability_category":1},"2")
+            b= b.replace({"probability_category":2},"3")
+            b= b.replace({"probability_category":3},"4")
+            b= b.replace({"probability_category":4},"5")
 
-            # b= b.replace({"item_sub_no":700},"일반 각인")
-            # b= b.replace({"item_sub_no":701},"축복 각인")
+            b= b.replace({"item_sub_no":700},"일반 각인")
+            b= b.replace({"item_sub_no":701},"축복 각인")
             
             # b.rename(columns={
             # 'mTime':'수행시각'
@@ -2431,25 +2467,25 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
 if __name__ == "__main__" : 
-    check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
-    #check_combine_card(2)              #230307
-    #check_combine_card(3)              #230307
-    #check_combine_mat()                #230307
-    #check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
-    #check_skill()                      #230403
-    #check_change_mat()                  #230404
-    #check_reinforce_item()              #230405
-    #check_reinforce_item_point()        #230405
-    #check_soul()   
-    #check_engrave()
-    #check_spot_tran()                   #변신/서번트합치자
-    #check_spot_serv()  
-    #check_redraw_gacha(14)             #230307
-    #check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
-    #check_redraw_gacha(16)             #230317
-    #check_redraw_combine(17)      #230320
-    #check_reinforce_slot()
-    #check_reinforce_slot_ancient()
+    # check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
+    # check_combine_card(2)              #230307
+    # check_combine_card(3)              #230307
+    # check_combine_mat()                #230307
+    # check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
+    # check_skill()                      #230403
+    # check_change_mat()                  #230404
+    # check_reinforce_item()              #230405
+    # check_reinforce_item_point()        #230405
+    # check_soul()   
+    check_engrave()
+    # check_spot_tran()                   #변신/서번트합치자
+    # check_spot_serv()  
+    # check_redraw_gacha(14)             #230307
+    # check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
+    # check_redraw_gacha(16)             #230317
+    # check_redraw_combine(17)      #230320
+    # check_reinforce_slot()
+    # check_reinforce_slot_ancient()
     
     
     #input("press any key to exit...")
