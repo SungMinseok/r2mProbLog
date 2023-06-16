@@ -2468,9 +2468,9 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
     print(f'total-run-time : {time.time()-startTime:.4f} sec')
 
 if __name__ == "__main__" : 
-    check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
-    check_combine_card(2)              #230307
-    check_combine_card(3)              #230307
+    #check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
+    #check_combine_card(2)              #230307
+    #check_combine_card(3)              #230307
     check_combine_mat()                #230307
     check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
     check_skill()                      #230403

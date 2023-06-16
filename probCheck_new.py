@@ -25,6 +25,7 @@ reportName = f"{resultDir}/report_{time.strftime('%H%M%S')}.csv"
 
 ingame_file = "R2MProbabilityTestHistory_20230613_20230614.csv"#인게임에서 추출한 확률 로그
 df_log = pd.read_csv(ingame_file)
+df_log["etc_json"] = df_log["etc_json"].str.replace("}","]")
 
 
 #■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■#
@@ -47,6 +48,8 @@ def getCsvFile(fileName):
 
     if "item" in fileName :
         df_item = df_temp.copy()
+        df_item["mName"] = df_item["mName"].str.replace(" ", "")
+
     elif "transform" in fileName :
         df_tran = df_temp.copy()
     elif "servant" in fileName :
@@ -138,6 +141,8 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
         prob_no_list = []
         ref_list = []
 
+        #log_condition = None
+
         # 조건을 만족하는 행 추출 및 값 저장
         for index, row in df_info.loc[condition, ["execute","arg_0", "arg_1", "prob_no", "ref"]].iterrows():
             execute_list.append(row["execute"])
@@ -166,20 +171,53 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
 
 
             '''Flow
-            1.df_log에서 해당 조건에 맞는 로그만 임시 저장 > df_filtered
-            2.
-            
-            
+
+            df_sheet : 확률 가이드 중 현재 시트
+
+            [1]df_log에서 해당 조건에 맞는 로그만 빼서 df_filtered로 저장
+            [2]DATA CSV 파일에서 필요한 정보 가져와서 df_sheet 오른쪽 열에 붙임
+            [3]확률 찾아서 df_sheet 오른쪽 열에 붙임
+            [4]오차 계산해서 df_sheet 오른쪽 열에 붙임
+            [5]리포트 기입(pass/fail/fail사유)
+            [6]결과 파일 내보내기
+
             '''
 
-            if prob_no == 1:
 
 
+            '''[1]########################################################################################'''
+                
+            if prob_no == 1 \
+                or prob_no == 2 \
+                or prob_no == 3 \
+                :
+                
+                
                 #로그 데이터에서 해당 조건에 맞는 로그만 임시 저장 > df_filtered
                 log_condition = (df_log["probability_type"] == prob_no) & (df_log["item_no"] == arg_0) 
-                df_filtered = df_log.loc[log_condition]
                 #print(df_filtered)
 
+            elif prob_no == 14 \
+                or prob_no == 16 \
+                :
+
+                log_condition = (df_log["probability_type"] == prob_no) & \
+                            (df_log["item_no"] == arg_0) & \
+                            (df_log["etc_json"].str.contains(f'"RedrawGroupNo":({arg_1}])'))
+                            #(df_log["etc_json"].str.contains(fr'"RedrawGroupNo":({arg_1}\})'))
+
+
+           
+            df_filtered = df_log.loc[log_condition]
+                #print(df_filtered)
+            '''[2]########################################################################################'''
+                
+            if prob_no == 1 \
+                or prob_no == 2 \
+                or prob_no == 3 \
+                or prob_no == 14 \
+                or prob_no == 16 \
+                :
                 
                 # df_sheet의 길이만큼 반복하여 "이름" 열의 값과 일치하는 "mID" 값을 가져와서 리스트에 저장
                 if ref_list == "tran":
@@ -187,42 +225,124 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 elif ref_list == "serv":
                     id_values = [df_serv.loc[df_serv["mName"] == name, "mID"].values[0] for name in df_sheet["이름"]]
                 elif ref_list == "item":
-                    id_values = [df_item.loc[df_item["mName"] == name, "mID"].values[0] for name in df_sheet["이름"]]
+                    try: 
+                        target_prob_colname = "이름"
+                        df_sheet[target_prob_colname] = df_sheet[target_prob_colname].str.replace(" ", "")
+                        id_values = [df_item.loc[df_item["mName"] == name, "mID"].values[0] for name in df_sheet[target_prob_colname]]
+                    except :
+                        target_prob_colname = "아이템 명"
+                        df_sheet[target_prob_colname] = df_sheet[target_prob_colname].str.replace(" ", "")
+                        id_values = [df_item.loc[df_item["mName"] == name, "mID"].values[0] for name in df_sheet[target_prob_colname]]
                 # "ID" 열 추가
                 df_sheet["ID"] = id_values
 
-                # 결과 출력
-                #print(df_sheet)
 
-                #result_condition = (df_log["result_item_no"] == prob_no) & (df_log["item_no"] == arg_0) 
+            '''[3]########################################################################################'''
+                
+            if prob_no == 1 \
+                or prob_no == 2 \
+                or prob_no == 3 \
+                :
+                
+                
+                try:
+                    prob_values = [df_filtered.loc[df_filtered["result_item_no"] == id, "probability"].values[0] for id in df_sheet["ID"]]
+                    df_sheet["인게임 확률(%)"] = prob_values
+                except Exception as e:
+                    print(f'확률가이드 내 아이템명과 실제 획득 아이템명이 다릅니다. : {sheet_id} ({e})')
+
+            if prob_no == 14 \
+                or prob_no == 16 \
+                :
+                
+                
+                try:
+                    #prob_values = [df_filtered.loc[df_filtered["result_item_no"] == id, "probability"].values[0] for id in df_sheet["ID"] if id != arg_0]
+                    
+                    prob_values = [df_filtered.loc[df_filtered["result_item_no"] == id, "probability"].values[0] if id != arg_0 else 0 for id in df_sheet["ID"]]
+
+                    
+                    df_sheet["인게임 확률(%)"] = prob_values
+                except Exception as e:
+                    print(f'확률가이드 내 아이템명과 실제 획득 아이템명이 다르거나, 가이드 표 연결이 잘못됐습니다. : {sheet_id} ({e})')
 
 
-                prob_values = [df_filtered.loc[df_filtered["result_item_no"] == id, "probability"].values[0] for id in df_sheet["ID"]]
-                df_sheet["인게임 확률(%)"] = prob_values
 
 
+            '''[4]########################################################################################'''
 
-
+            if prob_no == 1 \
+                or prob_no == 2 \
+                or prob_no == 3 \
+                :
                 # DataFrame에서 "확률"과 "인게임 확률(%)" 열을 가져옵니다.
+
                 확률 = df_sheet["확률"]
-                인게임_확률 = df_sheet["인게임 확률(%)"]
 
-                # 오차를 계산하여 새로운 열 "오차(%)"을 추가합니다.
-                오차 = (확률 - 인게임_확률) / 확률
-                df_sheet["오차(%)"] = np.where(오차.isna(), np.nan, np.round(np.abs(오차) * 100,4))
+            elif prob_no == 14 \
+                or prob_no == 16 \
+                :
 
-
-
-
-
-
-                df_sheet = df_sheet.reset_index(drop=True)
-
+                교체대상카드확률 = df_sheet.loc[df_sheet["ID"] == arg_0, "확률"].values[0]
+                대상제외총확률 = df_sheet["확률"].sum() - 교체대상카드확률
+                df_sheet['대상제외확률'] = round(df_sheet['확률']  * 100 / 대상제외총확률 ,4)
+                df_sheet.loc[df_sheet["ID"] == arg_0, "대상제외확률"] = 0
+                
+                확률 = df_sheet["대상제외확률"]
 
 
 
-            '''파일 내보내기'''
+            인게임_확률 = df_sheet["인게임 확률(%)"]
 
+            # 오차를 계산하여 새로운 열 "오차(%)"을 추가합니다.
+            오차 = (확률 - 인게임_확률) / 확률
+            df_sheet["오차(%)"] = np.where(오차.isna(), np.nan, np.round(np.abs(오차) * 100,4))
+
+
+
+
+            df_sheet = df_sheet.reset_index(drop=True)
+
+
+
+
+            '''[5]########################################################################################'''
+
+            guide_name = f"{sheet_name}"
+            result = ""
+            etc = ""
+
+            if prob_no == 1 \
+                or prob_no == 2 \
+                or prob_no == 3 \
+                :
+
+                # "확률"과 "인게임 확률(%)"의 총합을 계산합니다.
+                확률_총합 = 확률.sum()
+                인게임_확률_총합 = 인게임_확률.sum()
+
+                # "result" 열을 생성하고 조건에 따라 값을 설정합니다.
+                try: 
+                    if 인게임_확률_총합 < 99.99999 :
+                        result = "Fail"
+                        etc = "고지표 내 항목 누락의심"
+                    # elif 인게임_확률_총합 < 99.99999 :
+                    #     result = "Fail"
+                    #     etc = "고지표 내 항목 누락의심"
+                    else :
+                        result = "Pass"
+                except:
+                    result = "Fail"
+                    etc = "알 수 없음"
+
+            #etc = f"Etc {i+1}"
+            df_report = df_report.append({"guide_name": guide_name, "result": result, "etc": etc}, ignore_index=True)
+
+            # DataFrame을 텍스트 파일로 내보내기
+            df_report.to_csv(reportName, index=False, encoding="utf-8-sig")
+            df_filtered = None
+
+            '''[6]########################################################################################'''
             #outputName = f"{resultDir}/result.xlsx"
             # 엑셀 파일이 이미 존재하는지 확인
             try:
@@ -240,42 +360,8 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 df_sheet.to_excel(resultName, sheet_name=sheet_name, index=False)
 
 
-            # 새로운 DataFrame 생성
-
-            # 반복문을 통해 데이터 추가
-
-            guide_name = f"{sheet_name}"
-            result = ""
-            etc = ""
-
-            # "확률"과 "인게임 확률(%)"의 총합을 계산합니다.
-            확률_총합 = 확률.sum()
-            인게임_확률_총합 = 인게임_확률.sum()
-
-            # "result" 열을 생성하고 조건에 따라 값을 설정합니다.
-            try: 
-                if 인게임_확률_총합 < 99.99999 :
-                    result = "Fail"
-                    etc = "고지표 내 항목 누락의심"
-                # elif 인게임_확률_총합 < 99.99999 :
-                #     result = "Fail"
-                #     etc = "고지표 내 항목 누락의심"
-                else :
-                    result = "Pass"
-            except:
-                result = "Fail"
-                etc = "알 수 없음"
-
-            #etc = f"Etc {i+1}"
-            df_report = df_report.append({"guide_name": guide_name, "result": result, "etc": etc}, ignore_index=True)
-
-            # DataFrame을 텍스트 파일로 내보내기
-            df_report.to_csv(reportName, index=False, encoding="utf-8-sig")
 
 
-
-
-            df_filtered = None
 
         #endregion
 ###◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇##
