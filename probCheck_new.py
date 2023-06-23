@@ -84,11 +84,11 @@ getCsvFile(f"./probInfo.csv") #id연결용
 #■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■#
 
 '''리포트생성'''
-df_report = pd.DataFrame(columns=["guide_name", "result", "etc"])
+df_report = pd.DataFrame(columns=["guide_name", "result", "etc", "mean_error"])
 
-def 리포트추출(guide_name, result, desc) :
+def 리포트추출(guide_name, result, desc, mean_error = -1) :
     global df_report
-    df_report = df_report.append({"guide_name": guide_name, "result": result, "etc": desc}, ignore_index=True)
+    df_report = df_report.append({"guide_name": guide_name, "result": result, "etc": desc, "mean_error" : mean_error}, ignore_index=True)
 
     # DataFrame을 텍스트 파일로 내보내기
     df_report.to_csv(reportName, index=False, encoding="utf-8-sig")
@@ -208,20 +208,24 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 or prob_no == 3 \
                 :
                 
-                
                 #로그 데이터에서 해당 조건에 맞는 로그만 임시 저장 > df_filtered
                 log_condition = (df_log["probability_type"] == prob_no) & (df_log["item_no"] == arg_0) 
-                #print(df_filtered)
 
             elif prob_no == 14 \
-                or prob_no == 15 \
                 or prob_no == 16 \
-                or prob_no == 17 \
                 :
 
                 log_condition = (df_log["probability_type"] == prob_no) & \
                             (df_log["item_no"] == arg_0) & \
                             (df_log["etc_json"].str.contains(f'"RedrawGroupNo":({arg_1}])'))
+
+            elif prob_no == 15 \
+                or prob_no == 17 \
+                :
+
+                log_condition = (df_log["probability_type"] == prob_no) & \
+                            (df_log["item_no"] == arg_0) & \
+                            (df_log["item_sub_no"] == arg_1)
                             #(df_log["etc_json"].str.contains(fr'"RedrawGroupNo":({arg_1}\})'))
 
 
@@ -339,7 +343,6 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
 
             '''[5]########################################################################################'''
 
-            guide_name = f"{sheet_name}"
             result = ""
             etc = ""
 
@@ -348,26 +351,25 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 or prob_no == 3 \
                 :
 
-                # "확률"과 "인게임 확률(%)"의 총합을 계산합니다.
-                확률_총합 = 확률.sum()
-                인게임_확률_총합 = 인게임_확률.sum()
-
-                # "result" 열을 생성하고 조건에 따라 값을 설정합니다.
-                try: 
-                    if 인게임_확률_총합 < 99.99999 :
-                        result = "Fail"
-                        etc = "고지표 내 항목 누락의심"
-                    # elif 인게임_확률_총합 < 99.99999 :
-                    #     result = "Fail"
-                    #     etc = "고지표 내 항목 누락의심"
-                    else :
-                        result = "Pass"
-                except:
+                if len(df_sheet) == len(df_filtered):
+                    result = "Pass"
+                else :
                     result = "Fail"
-                    etc = "알 수 없음"
 
+            #교체는 하나 차이
+            elif prob_no == 14 \
+                or prob_no == 15 \
+                or prob_no == 16 \
+                or prob_no == 17 \
+                :
+                
+                if len(df_sheet) == len(df_filtered) + 1: 
+                    result = "Pass"
+                else :
+                    result = "Fail"
 
-            리포트추출(guide_name,result,etc)
+            오차_평균 = df_sheet["오차(%)"].mean().round(4)
+            리포트추출(sheet_name,result,etc,오차_평균)
             # #etc = f"Etc {i+1}"
             # df_report = df_report.append({"guide_name": guide_name, "result": result, "etc": etc}, ignore_index=True)
 
