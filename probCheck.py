@@ -31,7 +31,7 @@ while not os.path.isfile(fileName) :
     try : 
         global df, df_target
         #fileName = input("확률테스트결과문서명 입력(.csv 제외) : ")
-        fileName = "R2MProbabilityTestHistory_20230613_20230614"
+        fileName = "R2MProbabilityTestHistory_20230626_20230627"
         if fileName == "" :
             #fileName = "R2MProbabilityTestHistory_20221219_20230120.csv"#R2MProbabilityTestHistory_20230126_20230127
             fileName = "R2MProbabilityTestHistory_20230404_20230404.csv"#R2MProbabilityTestHistory_20230126_20230127
@@ -2471,22 +2471,22 @@ if __name__ == "__main__" :
     #check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
     #check_combine_card(2)              #230307
     #check_combine_card(3)              #230307
-    check_combine_mat()                #230307
-    check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
-    check_skill()                      #230403
-    check_change_mat()                  #230404
-    check_reinforce_item()              #230405
-    check_reinforce_item_point()        #230405
+    # check_combine_mat()                #230307
+    # check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
+    # check_skill()                      #230403
+    # check_change_mat()                  #230404
+    # check_reinforce_item()              #230405
+    # check_reinforce_item_point()        #230405
     check_soul()   
-    check_engrave()
-    check_spot_tran()                   #변신/서번트합치자
-    check_spot_serv()  
-    check_redraw_gacha(14)             #230307
-    check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
-    check_redraw_gacha(16)             #230317
-    check_redraw_combine(17)      #230320
-    check_reinforce_slot()
-    check_reinforce_slot_ancient()
+    # check_engrave()
+    # check_spot_tran()                   #변신/서번트합치자
+    # check_spot_serv()  
+    # check_redraw_gacha(14)             #230307
+    # check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
+    # check_redraw_gacha(16)             #230317
+    # check_redraw_combine(17)      #230320
+    # check_reinforce_slot()
+    # check_reinforce_slot_ancient()
     
     
     #input("press any key to exit...")

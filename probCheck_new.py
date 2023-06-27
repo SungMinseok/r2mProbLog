@@ -23,7 +23,7 @@ reportName = f"{resultDir}/report_{time.strftime('%H%M%S')}.csv"
 #■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■#
 '''인게임 로그데이터 처리'''
 
-ingame_file = "R2MProbabilityTestHistory_20230613_20230614.csv"#인게임에서 추출한 확률 로그
+ingame_file = "R2MProbabilityTestHistory_20230626_20230627.csv"#인게임에서 추출한 확률 로그
 df_log = pd.read_csv(ingame_file)
 df_log["etc_json"] = df_log["etc_json"].str.replace("}","]")
 
@@ -118,6 +118,7 @@ df_info["execute"] = df_info["execute"].astype(int)
 
 # "확률가이드.xlsx"의 모든 시트를 df_guide에 저장
 guide_file = "확률가이드.xlsx"#커뮤니티 내 확률 가이드
+guide_file = "webProb.xlsx"#커뮤니티 내 확률 가이드
 xls = pd.ExcelFile(guide_file)
 df_guide = {}
 for sheet_id in xls.sheet_names:
