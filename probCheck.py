@@ -6,6 +6,12 @@ import re
 from tqdm import tqdm
 
 
+targetName = "probTarget_total_backup.csv"
+#targetName = "probTarget.csv"
+
+df_webProb_path = f"./webProb_KR_230629_150355.xlsx"
+
+
 resultBasicDir = f"./result"
 if not os.path.isdir(resultBasicDir) :
     os.mkdir(resultBasicDir)
@@ -25,7 +31,6 @@ emptyProbList = []#확률문서 누락
 fileName = ""
 #fileName = "R2MProbabilityTestHistory_20221219_20230120.csv"
 
-targetName = "probTarget.csv"
 
 while not os.path.isfile(fileName) :
     try : 
@@ -60,6 +65,8 @@ def getCsvFile(fileName):
 
     if "item" in fileName :
         df_item = df_temp.copy()
+        df_item["mName"] = df_item["mName"].str.replace(" ", "")
+
     elif "transform" in fileName :
         df_tran = df_temp.copy()
     elif "servant" in fileName :
@@ -91,7 +98,6 @@ getCsvFile(f"./prob/prob.csv")
 getCsvFile(f"./probInfo.csv") #id연결용
 
 
-df_webProb_path = f"./webProb.xlsx"
 #df_webProb = pd.read_excel(df_webProb_path)
 
 def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrder = False, targetColName = "이름", refColName = "확률" ,args = []):
@@ -135,8 +141,8 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 try : 
                     
                     df_ref.iloc[2:, 4] = df_ref.iloc[2:, 4].astype(float)
-                    #df_ref.iloc[2:, 7] = df_ref.iloc[2:, 7].astype(float)
-                    df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+                    df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
+                    #df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
                     expectedProb = df_ref.loc[(df_ref[0] == optionName)
                                             &(df_ref[1] == slainName)
                                             &(df_ref[2] == abilityName)
@@ -145,8 +151,8 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 except : #방어구 확률 고지표 양식이 다름
                     try : 
                         df_ref.iloc[2:, 5] = df_ref.iloc[2:, 5].astype(float)
-                        #df_ref.iloc[2:, 7] = df_ref.iloc[2:, 7].astype(float)
-                        df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+                        df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
+#                        df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
                         expectedProb = df_ref.loc[(df_ref[10] == optionName)
                                                 &(df_ref[2] == slainName)
                                                 &(df_ref[3] == abilityName)
@@ -160,7 +166,8 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                 try : 
                     #df_ref.iloc[2:, 4] = df_ref.iloc[2:, 4].astype(float)
                     df_ref.iloc[2:, 7] = df_ref.iloc[2:, 7].astype(float)
-                    df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+                    df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
+                    #df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
                     expectedProb = df_ref.loc[(df_ref[0] == optionName)
                                             &(df_ref[1] == slainName)
                                             &(df_ref[2] == abilityName)
@@ -170,7 +177,8 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                     try : 
                         #df_ref.iloc[2:, 4] = df_ref.iloc[2:, 4].astype(float)
                         df_ref.iloc[2:, 8] = df_ref.iloc[2:, 8].astype(float)
-                        df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+                        df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
+                        #df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
                         expectedProb = df_ref.loc[(df_ref[10] == optionName)
                                                 &(df_ref[2] == slainName)
                                                 &(df_ref[3] == abilityName)
@@ -180,7 +188,12 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                         try : 
                             #df_ref.iloc[2:, 4] = df_ref.iloc[2:, 4].astype(float)
                             df_ref.iloc[1:, 5] = df_ref.iloc[1:, 5].astype(float)
-                            df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+                            df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
+                            #df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
+                            try :
+                                df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
+                            except:
+                                pass
                             optionName = re.search(r'\d+단계', optionName).group()
 
 
@@ -189,7 +202,8 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                                                     &(df_ref[3] == abilityName)
                                                     &(df_ref[5] == statLevel)
                                                     , 6].iloc[0]
-                        except :
+                        except Exception as e:
+                            print(e)
                             continue
             #except :
             #    expectedProb = 0
@@ -375,20 +389,53 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
             case 1: itemName이 없을 수 있음.
             """
             try :
+                #df_ref[targetColName] = df_ref[targetColName].str.replace(" ", "")
                 expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
-                #prob = 
                 df_after.loc[i,"mExpectedProb"] = expectedProb
-                #df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
-                #df_after.loc[i,"mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
-            except Exception as e:
-                print(e)
-                errorStr = f'{probID=} {refPage=} {itemName=}'
-                print(errorStr)
-                emptyProbList.append(errorStr)
-                df_after.loc[i,"mExpectedProb"] = -1
-                #df_after.loc[i,"mProbDiff"] = #"=ABS(OFFSET($A$1,ROW()-1,COLUMN()-3)-OFFSET($A$1,ROW()-1,COLUMN()-2))/OFFSET($A$1,ROW()-1,COLUMN()-2)*100"
+            except :
+                try :
+                    df_ref[targetColName] = df_ref[targetColName].str.replace(" ", "")
+                    expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
+                    df_after.loc[i,"mExpectedProb"] = expectedProb
 
-                continue
+                except:
+                    try:
+                        targetColName = "아이템 명"
+                        df_ref[targetColName] = df_ref[targetColName].str.replace(" ", "")
+                        expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
+                        df_after.loc[i,"mExpectedProb"] = expectedProb
+                    except:
+                        df_ref[targetColName] = df_ref[targetColName].str.replace(" ", "")
+                        df_ref[targetColName] = df_ref[targetColName].str.replace("생명의금관", "전리품")
+                        df_ref[targetColName] = df_ref[targetColName].str.replace("수호의팔찌", "전리품")
+                        df_ref[targetColName] = df_ref[targetColName].str.replace("영혼의부적", "전리품")
+                        df_ref[targetColName] = df_ref[targetColName].str.replace("파괴의가면", "전리품")
+                        df_ref[targetColName] = df_ref[targetColName].str.replace("극복의성배", "전리품")
+                        df_ref[targetColName] = df_ref[targetColName].str.replace("숙련의나팔", "전리품")
+                        
+                        itemName = itemName.replace("생명의금관", "전리품")
+                        itemName = itemName.replace("수호의팔찌", "전리품")
+                        itemName = itemName.replace("영혼의부적", "전리품")
+                        itemName = itemName.replace("파괴의가면", "전리품")
+                        itemName = itemName.replace("극복의성배", "전리품")
+                        itemName = itemName.replace("숙련의나팔", "전리품")
+                        
+                        expectedProb = df_ref.loc[df_ref[targetColName] == itemName, refColName].iloc[0]
+                        df_after.loc[i,"mExpectedProb"] = expectedProb
+            # except :
+                
+            #     expectedProb = df_ref.loc[df_ref["아이템명"] == itemName, refColName].iloc[0]
+            #     df_after.loc[i,"mExpectedProb"] = expectedProb
+
+            # else :
+            #     print(e)
+            #     errorStr = f'{probID=} {refPage=} {itemName=}'
+            #     print(errorStr)
+            #     emptyProbList.append(errorStr)
+            #     df_after.loc[i,"mExpectedProb"] = -1
+            #     #df_after.loc[i,"mProbDiff"] = #"=ABS(OFFSET($A$1,ROW()-1,COLUMN()-3)-OFFSET($A$1,ROW()-1,COLUMN()-2))/OFFSET($A$1,ROW()-1,COLUMN()-2)*100"
+
+            #     continue
 
             #중단점
         df_after["mProbDiff"] = round(abs(df_after["mExpectedProb"] - df_after["probability"])/df_after["mExpectedProb"]*100,4)
@@ -538,9 +585,30 @@ def check_gacha():#probtest 1
         try : 
             gachaID = target
             #print(gachaID)
-            colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+
+            #colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+            colNum = -1
+            try : 
+                gachaID = int(target)
+                colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+            except:
+                gachaID = target
+                colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+            
+
+            # try:
+            #     #colNum = df_probInfo
+            #         # 데이터프레임의 각 컬럼을 순회하면서 523333을 찾습니다.
+            #     for column in df_probInfo.columns:
+            #         if gachaID in df_probInfo[column].values:
+            #             colNum = column
+            #             break
+            #     #colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
+            # except:
+            #     colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
             row = df_probInfo[df_probInfo[colNum] == gachaID].index[0]
             title = df_probInfo.loc[df_probInfo[colNum] == gachaID, 'title'].iloc[0]
+            title = f'{title}_{int(colNum)+1}번째_고지표'
             webID = f'{row}_{colNum}'
             b=compare_prob2(webID,b,probID).copy()
         except :
@@ -2128,6 +2196,8 @@ def check_engrave():#probtest 11 (인자 필요)
 
             if j == 0 :
                 scrollID = 700
+                if int(target) >= 430000 :
+                    continue
             else : 
                 scrollID = 701
 
@@ -2469,19 +2539,19 @@ def check_redraw_tran_gacha_all():#probtest 14 (인자 불필요 - 전체)
 
 if __name__ == "__main__" : 
     #check_gacha()                      #230307 #230330 전리품뽑기 예외필요, 매터리얼뽑기 [일반] 띄어쓰기문제
-    #check_combine_card(2)              #230307
-    #check_combine_card(3)              #230307
+    # check_combine_card(2)              #230307
+    # check_combine_card(3)              #230307
     # check_combine_mat()                #230307
     # check_craft()                      #230307 >>>>>>>>>>>>2023-04-05 교체해야됨(고지표 이름 잘못됨, 백만개 > 천만개 )
     # check_skill()                      #230403
     # check_change_mat()                  #230404
     # check_reinforce_item()              #230405
     # check_reinforce_item_point()        #230405
-    check_soul()   
-    # check_engrave()
+    # check_soul()   
+    check_engrave()
     # check_spot_tran()                   #변신/서번트합치자
     # check_spot_serv()  
-    # check_redraw_gacha(14)             #230307
+    #check_redraw_gacha(14)             #230307
     # check_redraw_combine(15)      #230320 5|3,5|4케이스 로그 누락(사방신 변신) > 아마 3월말에하면 될것으로 추측
     # check_redraw_gacha(16)             #230317
     # check_redraw_combine(17)      #230320

@@ -30,7 +30,7 @@ import os
 result_file_name = 'merged.xlsx'
 
 # csv 파일이 있는 폴더 경로
-csv_folder_path = './최종모음'
+csv_folder_path = fr'D:\파이썬프로젝트\r2mProbLog\final'
 
 # xlsx 파일 생성
 result_wb = openpyxl.Workbook()
