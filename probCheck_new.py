@@ -20,10 +20,35 @@ if not os.path.isdir(resultDir) :
 resultName = f"{resultDir}/result_{time.strftime('%H%M%S')}.xlsx"
 reportName = f"{resultDir}/report_{time.strftime('%H%M%S')}.csv"
 
+
+'''[입력대상]'''
+#▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦#
+ingame_file = "R2MProbabilityTestHistory_20230725_20230725.csv"#인게임에서 추출한 확률 로그
+#▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦#
+
+#▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦#
+'''[입력대상]'''
+info_name = "23년7월_업데이트"#검증일자 시트명(확률 참조 정보가 들어있다.)
+#info_name = "23년7월_확률검증"#검증일자 시트명(확률 참조 정보가 들어있다.)
+#▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦#
+
+#▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦#
+'''[입력대상]'''
+#guide_file = "확률가이드.xlsx"#커뮤니티 내 확률 가이드
+guide_file = "webProb_KR_230725_142052.xlsx"#커뮤니티 내 확률 가이드
+#▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦▦#
+
+
+
+
+
+
+
+
+
 #■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■#
 '''인게임 로그데이터 처리'''
 
-ingame_file = "R2MProbabilityTestHistory_20230626_20230627.csv"#인게임에서 추출한 확률 로그
 df_log = pd.read_csv(ingame_file)
 df_log["etc_json"] = df_log["etc_json"].str.replace("}","]")
 
@@ -101,7 +126,6 @@ def 리포트추출(guide_name, result, desc, mean_error = -1) :
 #■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■#
 '''확률정보 처리'''
 
-info_name = "23년7월"#검증일자 시트명(확률 참조 정보가 들어있다.)
 df_info = pd.read_excel("확률정보.xlsx",engine="openpyxl",sheet_name=info_name)
 
 df_info = df_info.fillna(0)
@@ -117,8 +141,6 @@ df_info["execute"] = df_info["execute"].astype(int)
 
 
 # "확률가이드.xlsx"의 모든 시트를 df_guide에 저장
-guide_file = "확률가이드.xlsx"#커뮤니티 내 확률 가이드
-guide_file = "webProb.xlsx"#커뮤니티 내 확률 가이드
 xls = pd.ExcelFile(guide_file)
 df_guide = {}
 for sheet_id in xls.sheet_names:
@@ -254,7 +276,7 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 if ref_list == "tran":
                     id_values = [df_tran.loc[df_tran["mName"] == name, "mID"].values[0] for name in df_sheet["이름"]]
                 elif ref_list == "serv":
-                    id_values = [df_serv.loc[df_serv["mName"] == name, "mID"].values[0] for name in df_sheet["이름"]]
+                    id_values = [df_serv.loc[df_serv["mName"] == name, "mID"].values[0] for name in df_sheet["이름"]] #메테오스쉐도우 걸름
                 elif ref_list == "item":
                     try: 
                         target_prob_colname = "이름"
@@ -282,7 +304,7 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 except Exception as e:
                     print(f'확률가이드 내 아이템명과 실제 획득 아이템명이 다르거나, 가이드 표 연결이 잘못됐습니다. : {sheet_id} ({e})')
                     리포트추출(sheet_name,"Fail",f'확률가이드 내 아이템명과 실제 획득 아이템명이 다르거나, 가이드 표 연결이 잘못됐습니다. : {sheet_id} ({e})')
-                    continue
+                    pass
 
             elif prob_no == 14 \
                 or prob_no == 15 \
@@ -296,9 +318,9 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
             
                     df_sheet["인게임 확률(%)"] = prob_values
                 except Exception as e:
-                    print(f'확률가이드 내 아이템명과 실제 획득 아이템명이 다르거나, 가이드 표 연결이 잘못됐습니다. : {sheet_id} ({e})')
+                    print(f'확률가이드 내 아이템명과 실제 획득 아이템명이 다르거나, 가이드 표 연결이 잘못됐습니다. : {sheet_id} {id} ({e})')
                     리포트추출(sheet_name,"Fail",f'확률가이드 내 아이템명과 실제 획득 아이템명이 다르거나, 가이드 표 연결이 잘못됐습니다. : {sheet_id} ({e})')
-                    continue
+                    pass
 
 
 
@@ -331,10 +353,14 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
             인게임_확률 = df_sheet["인게임 확률(%)"]
 
             # 오차를 계산하여 새로운 열 "오차(%)"을 추가합니다.
-            오차 = (확률 - 인게임_확률) / 확률
-            df_sheet["오차(%)"] = np.where(오차.isna(), np.nan, np.round(np.abs(오차) * 100,4))
+            try: 
+                오차 = (확률 - 인게임_확률) / 확률
+                df_sheet["오차(%)"] = np.where(오차.isna(), np.nan, np.round(np.abs(오차) * 100,4))
 
-
+            except Exception as e:
+                print(f'오차계산오류 : {sheet_id} ({e})')
+                리포트추출(sheet_name,"Fail",f'오차계산오류 : {sheet_id} ({e})')
+                pass
 
 
             df_sheet = df_sheet.reset_index(drop=True)
@@ -369,8 +395,14 @@ for sheet_id, df_sheet in tqdm(df_guide.items()):
                 else :
                     result = "Fail"
 
-            오차_평균 = df_sheet["오차(%)"].mean().round(4)
-            리포트추출(sheet_name,result,etc,오차_평균)
+            try:
+
+                오차_평균 = df_sheet["오차(%)"].mean().round(4)
+                리포트추출(sheet_name,result,etc,오차_평균)
+
+            except :
+                print("오차계산불가")
+                pass
             # #etc = f"Etc {i+1}"
             # df_report = df_report.append({"guide_name": guide_name, "result": result, "etc": etc}, ignore_index=True)
 

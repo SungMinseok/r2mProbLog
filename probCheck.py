@@ -7,9 +7,9 @@ from tqdm import tqdm
 
 
 targetName = "probTarget_total_backup.csv"
-#targetName = "probTarget.csv"
+targetName = "probTarget.csv"
 
-df_webProb_path = f"./webProb_KR_230629_150355.xlsx"
+df_webProb_path = f"./webProb_KR_230726_170817.xlsx"
 
 
 resultBasicDir = f"./result"
@@ -36,7 +36,7 @@ while not os.path.isfile(fileName) :
     try : 
         global df, df_target
         #fileName = input("확률테스트결과문서명 입력(.csv 제외) : ")
-        fileName = "R2MProbabilityTestHistory_20230626_20230627"
+        fileName = "R2MProbabilityTestHistory_20230725_20230725"
         if fileName == "" :
             #fileName = "R2MProbabilityTestHistory_20221219_20230120.csv"#R2MProbabilityTestHistory_20230126_20230127
             fileName = "R2MProbabilityTestHistory_20230404_20230404.csv"#R2MProbabilityTestHistory_20230126_20230127
@@ -188,6 +188,7 @@ def compare_prob2(refPage : str, df_before : pd.DataFrame, probID : int,  inOrde
                         try : 
                             #df_ref.iloc[2:, 4] = df_ref.iloc[2:, 4].astype(float)
                             df_ref.iloc[1:, 5] = df_ref.iloc[1:, 5].astype(float)
+                            #df_ref['옵션 수치']=df_ref['옵션 수치'].astype(float)
                             df_after['mStatLevel']=df_after['mStatLevel'].astype(float)
                             #df_after.iloc[:, 7] = df_after.iloc[:, 7].astype(float)
                             try :
@@ -2369,7 +2370,7 @@ def check_engrave():#probtest 11 (인자 필요)
                 gachaID = target
                 colNum = df_probInfo.columns[df_probInfo.eq(gachaID).any()][0]
             #print(gachaID)
-            row = df_probInfo[df_probInfo[colNum] == gachaID].index[0]
+            row = int(df_probInfo[df_probInfo[colNum] == gachaID].index[0])
             title = df_probInfo.loc[df_probInfo[colNum] == gachaID, 'title'].iloc[0]
             webID = f"{row}_{str(colNum).split('.')[0]}"
             b=compare_prob2(webID,b,11).copy()
